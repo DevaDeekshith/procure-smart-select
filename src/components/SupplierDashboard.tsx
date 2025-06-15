@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,18 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { SupplierCard } from "./SupplierCard";
 import { EvaluationMatrix } from "./EvaluationMatrix";
+import { EvaluationAnalytics } from "./EvaluationAnalytics";
+import { SupplierScoring } from "./SupplierScoring";
 import { CriteriaWeights } from "./CriteriaWeights";
 import { AddSupplierForm } from "./AddSupplierForm";
 import { mockSuppliers } from "@/data/mockData";
-import { Supplier } from "@/types/supplier";
-import { Search, Plus, Filter, Users, Star, TrendingUp } from "lucide-react";
+import { Supplier, SupplierScore } from "@/types/supplier";
+import { Search, Plus, Filter, Users, Star, TrendingUp, Calculator, BarChart3 } from "lucide-react";
 
 export const SupplierDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [view, setView] = useState<"grid" | "matrix">("grid");
+  const [view, setView] = useState<"grid" | "matrix" | "analytics" | "scoring">("grid");
   const [suppliers, setSuppliers] = useState(mockSuppliers);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedSupplierForScoring, setSelectedSupplierForScoring] = useState<Supplier | null>(null);
 
   const filteredSuppliers = suppliers.filter(supplier => {
     const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,6 +55,34 @@ export const SupplierDashboard = () => {
   const handleDeleteSupplier = (supplierId: string) => {
     setSuppliers(prev => prev.filter(supplier => supplier.id !== supplierId));
   };
+
+  const handleScoreSubmit = (scores: SupplierScore[]) => {
+    console.log('Scores submitted:', scores);
+    setSelectedSupplierForScoring(null);
+    setView("matrix");
+  };
+
+  const handleSupplierClick = (supplier: Supplier) => {
+    if (view === "grid") {
+      setSelectedSupplierForScoring(supplier);
+      setView("scoring");
+    }
+  };
+
+  if (selectedSupplierForScoring && view === "scoring") {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <SupplierScoring
+          supplier={selectedSupplierForScoring}
+          onScoreSubmit={handleScoreSubmit}
+          onCancel={() => {
+            setSelectedSupplierForScoring(null);
+            setView("grid");
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
@@ -153,6 +183,14 @@ export const SupplierDashboard = () => {
           >
             Matrix View
           </Button>
+          <Button
+            variant={view === "analytics" ? "default" : "outline"}
+            onClick={() => setView("analytics")}
+            className="flex-1 sm:flex-none"
+          >
+            <BarChart3 className="w-4 h-4 mr-1" />
+            Analytics
+          </Button>
         </div>
       </div>
 
@@ -168,7 +206,7 @@ export const SupplierDashboard = () => {
                     supplier={supplier}
                     onEdit={handleEditSupplier}
                     onDelete={handleDeleteSupplier}
-                    onClick={() => console.log(`Selected supplier: ${supplier.name}`)}
+                    onClick={() => handleSupplierClick(supplier)}
                   />
                 ))}
               </div>
@@ -184,11 +222,13 @@ export const SupplierDashboard = () => {
             </div>
           </div>
         </div>
-      ) : (
+      ) : view === "matrix" ? (
         <div className="w-full overflow-x-auto">
           <EvaluationMatrix />
         </div>
-      )}
+      ) : view === "analytics" ? (
+        <EvaluationAnalytics />
+      ) : null}
     </div>
   );
 };
