@@ -3,136 +3,156 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import { SupplierDetailView } from "./SupplierDetailView";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EditSupplierForm } from "./EditSupplierForm";
 import { Supplier } from "@/types/supplier";
-import { Building2, Mail, Phone, Calendar, Award, Eye, Trash2 } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Building2, MapPin, Calendar, Star, Award } from "lucide-react";
 
 interface SupplierCardProps {
   supplier: Supplier;
-  onEdit?: (supplier: Supplier) => void;
-  onDelete?: (supplierId: string) => void;
-  onClick?: () => void;
+  onEdit: (supplier: Supplier) => void;
+  onDelete: (supplierId: string) => void;
+  onClick?: (supplier: Supplier) => void;
 }
 
 export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCardProps) => {
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
-    if (onClick) {
-      onClick();
-    }
-  };
-
-  const handleEdit = (updatedSupplier: Supplier) => {
-    if (onEdit) {
-      onEdit(updatedSupplier);
-    }
-    setIsDetailOpen(false);
-  };
-
-  const handleDelete = (supplierId: string) => {
-    if (onDelete && confirm('Are you sure you want to delete this supplier?')) {
-      onDelete(supplierId);
-    }
-    setIsDetailOpen(false);
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return 'text-green-600';
+    if (rating >= 3.5) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
-    <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer group border border-gray-200" onClick={handleCardClick}>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold text-blue-900 truncate">{supplier.name}</CardTitle>
-            <p className="text-sm text-gray-600 truncate">{supplier.industry}</p>
+    <>
+      <Card 
+        className="frosted-glass border-0 hover-glow smooth-transition cursor-pointer group overflow-hidden"
+        onClick={() => onClick?.(supplier)}
+      >
+        <CardHeader className="pb-3 relative">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 smooth-transition">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="glass-card w-8 h-8 p-0 hover:bg-white/20"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="glass-card border-0" align="end">
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditDialogOpen(true);
+                  }}
+                  className="hover:bg-white/20"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(supplier.id);
+                  }}
+                  className="text-red-600 hover:bg-red-50/50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div className="flex-shrink-0">
-            <Badge className={getStatusColor(supplier.status)}>
-              {supplier.status.toUpperCase()}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-2">
-          <div className="flex items-center text-sm text-gray-600">
-            <Building2 className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">{supplier.contactPerson}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">{supplier.email}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">{supplier.phone}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span>Est. {supplier.establishedYear}</span>
-          </div>
-        </div>
-        
-        {supplier.certifications.length > 0 && (
-          <div className="flex items-start text-sm text-gray-600">
-            <Award className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-            <div className="flex flex-wrap gap-1 min-w-0">
-              {supplier.certifications.slice(0, 2).map((cert, index) => (
-                <Badge key={index} variant="outline" className="text-xs truncate max-w-[120px]">
-                  {cert}
+          
+          <div className="flex items-start gap-3">
+            <div className="glass-card p-3 rounded-2xl">
+              <Building2 className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg font-bold text-gray-900 truncate">
+                {supplier.name}
+              </CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className={`text-xs font-medium border ${getStatusBadgeColor(supplier.status)} rounded-full px-3 py-1`}>
+                  {supplier.status}
                 </Badge>
-              ))}
-              {supplier.certifications.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{supplier.certifications.length - 2} more
-                </Badge>
-              )}
+              </div>
             </div>
           </div>
-        )}
-        
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 text-xs">
-                <Eye className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">View</span>
-              </Button>
-            </SheetTrigger>
-            <SupplierDetailView
-              supplier={supplier}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          </Sheet>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onDelete && confirm('Are you sure you want to delete this supplier?')) {
-                onDelete(supplier.id);
-              }
-            }}
-            className="text-red-600 hover:text-red-700 px-2"
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Building2 className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{supplier.industry}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{supplier.location}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Calendar className="w-4 h-4 flex-shrink-0" />
+              <span>Since {new Date(supplier.createdAt).getFullYear()}</span>
+            </div>
+          </div>
+
+          <div className="glass-card p-4 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Overall Rating</span>
+              <div className="flex items-center gap-1">
+                <Star className={`w-4 h-4 fill-current ${getRatingColor(supplier.overallRating || 0)}`} />
+                <span className={`text-sm font-bold ${getRatingColor(supplier.overallRating || 0)}`}>
+                  {supplier.overallRating?.toFixed(1) || 'N/A'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Performance</span>
+              <div className="flex items-center gap-1">
+                <Award className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-600">
+                  {supplier.performanceScore ? `${supplier.performanceScore}%` : 'Pending'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-200/50">
+            Click to evaluate this supplier
+          </div>
+        </CardContent>
+      </Card>
+
+      <EditSupplierForm
+        supplier={supplier}
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSubmit={(updatedSupplier) => {
+          onEdit(updatedSupplier);
+          setIsEditDialogOpen(false);
+        }}
+      />
+    </>
   );
 };
