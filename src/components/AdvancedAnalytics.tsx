@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, FileText, Users, TrendingUp } from "lucide-react";
+import { BarChart3, FileText, Users, TrendingUp, AlertTriangle } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { Supplier } from "@/types/supplier";
 
@@ -18,7 +18,7 @@ const SCORING_SCALE = {
   POOR: { label: 'Poor', minScore: 0 },
 };
 
-export const EvaluationAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
+export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
   const [timeframe, setTimeframe] = useState("last_quarter");
 
   // Mock supplier scores (replace with actual data)
@@ -282,7 +282,7 @@ export const EvaluationAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <div className="glass-card p-2 rounded-lg">
-                    <Alert className="w-5 h-5 text-red-600" />
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
                   </div>
                   Risk Distribution
                 </CardTitle>
@@ -491,5 +491,3 @@ export const EvaluationAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
     </div>
   );
 };
-
-import { Alert } from "lucide-react";
