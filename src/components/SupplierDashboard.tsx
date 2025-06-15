@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,13 +22,10 @@ export const SupplierDashboard = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedSupplierForScoring, setSelectedSupplierForScoring] = useState<Supplier | null>(null);
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || supplier.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.industry.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
   const pendingSuppliers = suppliers.filter(s => s.status === 'pending').length;

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -22,8 +21,7 @@ export const AdvancedSearch = ({ suppliers, onSearchChange, onSupplierSelect, se
   // Filter suppliers based on search term
   const filteredSuppliers = suppliers.filter(supplier => 
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.location.toLowerCase().includes(searchTerm.toLowerCase())
+    supplier.industry.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 8); // Limit to 8 results
 
   // Handle input change
@@ -104,7 +102,7 @@ export const AdvancedSearch = ({ suppliers, onSearchChange, onSupplierSelect, se
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <Input
           ref={searchRef}
-          placeholder="Search suppliers by name, industry, or location..."
+          placeholder="Search suppliers by name or industry..."
           value={searchTerm}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -141,7 +139,6 @@ export const AdvancedSearch = ({ suppliers, onSearchChange, onSupplierSelect, se
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{supplier.name}</div>
                   <div className="text-sm text-gray-600">{supplier.industry}</div>
-                  <div className="text-xs text-gray-500 mt-1">{supplier.location}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge 
