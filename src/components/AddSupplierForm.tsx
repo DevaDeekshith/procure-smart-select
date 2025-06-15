@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { X, Plus, Info, User, Building2, Mail, Phone, MapPin, Calendar, Award } from "lucide-react";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/components/ui/use-toast";
 
@@ -76,7 +77,6 @@ export const AddSupplierForm = ({ onSubmit, onCancel }: AddSupplierFormProps) =>
   };
 
   const validateCredentials = () => {
-    // Simple credential check - in a real app, this would be more secure
     const validUsername = "admin";
     const validPassword = "supplier123";
     
@@ -109,199 +109,311 @@ export const AddSupplierForm = ({ onSubmit, onCancel }: AddSupplierFormProps) =>
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-bold text-blue-900">Add New Supplier</DialogTitle>
-      </DialogHeader>
-      
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Basic Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Supplier Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter supplier name"
+    <TooltipProvider>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-0 shadow-2xl">
+        <DialogHeader className="text-center pb-6">
+          <div className="mx-auto glass-card p-4 rounded-2xl mb-4 w-fit">
+            <Building2 className="w-8 h-8 text-blue-600" />
+          </div>
+          <DialogTitle className="text-2xl font-bold gradient-text">Add New Supplier</DialogTitle>
+          <p className="text-gray-600 mt-2">Complete the form below to onboard a new supplier</p>
+        </DialogHeader>
+        
+        <div className="space-y-8">
+          {/* Basic Information */}
+          <div className="frosted-glass p-6 rounded-2xl space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="glass-card p-2 rounded-lg">
+                <User className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-4 h-4 text-gray-400 hover:text-blue-600 transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent className="glass-card border-0">
+                  <p>Enter the supplier's basic company information and industry details</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  Supplier Name *
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter supplier company name"
+                  className="glass-input border-0 h-12 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="industry" className="text-sm font-medium flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Industry *
+                </Label>
+                <Select value={formData.industry} onValueChange={(value) => handleInputChange('industry', value)}>
+                  <SelectTrigger className="glass-input border-0 h-12 rounded-xl">
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent className="glass-card border-0">
+                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                    <SelectItem value="technology">Technology</SelectItem>
+                    <SelectItem value="automotive">Automotive</SelectItem>
+                    <SelectItem value="pharmaceutical">Pharmaceutical</SelectItem>
+                    <SelectItem value="textiles">Textiles</SelectItem>
+                    <SelectItem value="food">Food & Beverage</SelectItem>
+                    <SelectItem value="construction">Construction</SelectItem>
+                    <SelectItem value="logistics">Logistics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">Company Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Brief description of the supplier's business and capabilities"
+                rows={3}
+                className="glass-input border-0 rounded-xl resize-none"
               />
             </div>
-            <div>
-              <Label htmlFor="industry">Industry *</Label>
-              <Select value={formData.industry} onValueChange={(value) => handleInputChange('industry', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="automotive">Automotive</SelectItem>
-                  <SelectItem value="pharmaceutical">Pharmaceutical</SelectItem>
-                  <SelectItem value="textiles">Textiles</SelectItem>
-                  <SelectItem value="food">Food & Beverage</SelectItem>
-                  <SelectItem value="construction">Construction</SelectItem>
-                  <SelectItem value="logistics">Logistics</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-          
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Brief description of the supplier"
-              rows={3}
-            />
-          </div>
-        </div>
 
-        {/* Contact Information */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Contact Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="contactPerson">Contact Person *</Label>
+          {/* Contact Information */}
+          <div className="frosted-glass p-6 rounded-2xl space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="glass-card p-2 rounded-lg">
+                <Mail className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-4 h-4 text-gray-400 hover:text-blue-600 transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent className="glass-card border-0">
+                  <p>Primary contact details for communication and coordination</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson" className="text-sm font-medium flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Contact Person *
+                </Label>
+                <Input
+                  id="contactPerson"
+                  value={formData.contactPerson}
+                  onChange={(e) => handleInputChange('contactPerson', e.target.value)}
+                  placeholder="Primary contact person name"
+                  className="glass-input border-0 h-12 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  Phone Number *
+                </Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="Contact phone number"
+                  className="glass-input border-0 h-12 rounded-xl"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Address *
+              </Label>
               <Input
-                id="contactPerson"
-                value={formData.contactPerson}
-                onChange={(e) => handleInputChange('contactPerson', e.target.value)}
-                placeholder="Contact person name"
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="Primary email address"
+                className="glass-input border-0 h-12 rounded-xl"
               />
             </div>
-            <div>
-              <Label htmlFor="phone">Phone *</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Phone number"
+            
+            <div className="space-y-2">
+              <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Business Address
+              </Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                placeholder="Complete business address"
+                rows={2}
+                className="glass-input border-0 rounded-xl resize-none"
               />
             </div>
           </div>
-          
-          <div>
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Email address"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Complete address"
-              rows={2}
-            />
-          </div>
-        </div>
 
-        {/* Additional Information */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">Additional Information</h3>
-          <div>
-            <Label htmlFor="establishedYear">Established Year</Label>
-            <Input
-              id="establishedYear"
-              type="number"
-              value={formData.establishedYear}
-              onChange={(e) => handleInputChange('establishedYear', parseInt(e.target.value))}
-              min="1900"
-              max={new Date().getFullYear()}
-            />
-          </div>
-          
-          <div>
-            <Label>Certifications</Label>
-            <div className="flex gap-2 mb-2">
+          {/* Additional Information */}
+          <div className="frosted-glass p-6 rounded-2xl space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="glass-card p-2 rounded-lg">
+                <Calendar className="w-5 h-5 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Additional Details</h3>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-4 h-4 text-gray-400 hover:text-blue-600 transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent className="glass-card border-0">
+                  <p>Company establishment year and quality certifications</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="establishedYear" className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Established Year
+              </Label>
               <Input
-                value={newCertification}
-                onChange={(e) => setNewCertification(e.target.value)}
-                placeholder="Add certification (e.g., ISO 9001)"
-                onKeyPress={(e) => e.key === 'Enter' && addCertification()}
+                id="establishedYear"
+                type="number"
+                value={formData.establishedYear}
+                onChange={(e) => handleInputChange('establishedYear', parseInt(e.target.value))}
+                min="1900"
+                max={new Date().getFullYear()}
+                className="glass-input border-0 h-12 rounded-xl w-full lg:w-48"
               />
-              <Button type="button" onClick={addCertification} size="sm">
-                <Plus className="w-4 h-4" />
+            </div>
+            
+            <div className="space-y-4">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                Quality Certifications
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newCertification}
+                  onChange={(e) => setNewCertification(e.target.value)}
+                  placeholder="Add certification (e.g., ISO 9001, ISO 14001)"
+                  onKeyPress={(e) => e.key === 'Enter' && addCertification()}
+                  className="glass-input border-0 h-12 rounded-xl flex-1"
+                />
+                <Button 
+                  type="button" 
+                  onClick={addCertification} 
+                  className="liquid-button text-white h-12 px-6 rounded-xl"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {certifications.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-4 frosted-glass rounded-xl">
+                  {certifications.map((cert, index) => (
+                    <Badge key={index} variant="secondary" className="glass-card border-0 px-3 py-1 flex items-center gap-2">
+                      <Award className="w-3 h-3" />
+                      {cert}
+                      <X className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors" onClick={() => removeCertification(cert)} />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Admin Verification */}
+          <div className="frosted-glass p-6 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="glass-card p-2 rounded-lg">
+                  <User className="w-5 h-5 text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Admin Verification</h3>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-4 h-4 text-gray-400 hover:text-blue-600 transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent className="glass-card border-0">
+                    <p>Admin credentials required to authorize new supplier addition</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCredentials(!showCredentials)}
+                className="glass-card border-0 hover-glow"
+              >
+                {showCredentials ? 'Hide' : 'Show'} Credentials
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {certifications.map((cert, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {cert}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeCertification(cert)} />
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Admin Credentials */}
-        <div className="space-y-4 border-t pt-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Admin Verification</h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCredentials(!showCredentials)}
-            >
-              {showCredentials ? 'Hide' : 'Show'} Credentials
-            </Button>
-          </div>
-          
-          {showCredentials && (
-            <div className="bg-yellow-50 p-4 rounded-lg space-y-3">
-              <p className="text-sm text-yellow-800">
-                Enter admin credentials to authorize adding this supplier:
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={adminCredentials.username}
-                    onChange={(e) => setAdminCredentials(prev => ({ ...prev, username: e.target.value }))}
-                    placeholder="admin"
-                  />
+            
+            {showCredentials && (
+              <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm p-6 rounded-2xl space-y-4 border border-amber-200/30">
+                <p className="text-sm text-amber-800 font-medium">
+                  Enter admin credentials to authorize adding this supplier:
+                </p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                    <Input
+                      id="username"
+                      value={adminCredentials.username}
+                      onChange={(e) => setAdminCredentials(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="admin"
+                      className="glass-input border-0 h-12 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={adminCredentials.password}
+                      onChange={(e) => setAdminCredentials(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Enter password"
+                      className="glass-input border-0 h-12 rounded-xl"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={adminCredentials.password}
-                    onChange={(e) => setAdminCredentials(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Enter password"
-                  />
+                <div className="glass-card p-3 rounded-xl">
+                  <p className="text-xs text-gray-600">
+                    <strong>Demo credentials:</strong> Username: <code className="bg-gray-100 px-1 rounded">admin</code>, Password: <code className="bg-gray-100 px-1 rounded">supplier123</code>
+                  </p>
                 </div>
               </div>
-              <p className="text-xs text-gray-600">
-                Demo credentials: Username: <code>admin</code>, Password: <code>supplier123</code>
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      <DialogFooter className="gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-          Add Supplier
-        </Button>
-      </DialogFooter>
-    </DialogContent>
+        <DialogFooter className="gap-3 mt-8">
+          <Button 
+            variant="outline" 
+            onClick={onCancel}
+            className="glass-card border-0 hover-glow px-8 py-3 h-12 rounded-xl"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            className="liquid-button text-white px-8 py-3 h-12 rounded-xl hover-glow"
+          >
+            Add Supplier
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </TooltipProvider>
   );
 };

@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, X, Filter, FileText, Users, Target, TrendingUp } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Search, X, Filter, FileText, Users, Target, TrendingUp, Info, Building2, Award, BarChart3 } from "lucide-react";
 import { Supplier } from "@/types/supplier";
 import { DEFAULT_CRITERIA } from "@/types/supplier";
 
@@ -22,9 +23,11 @@ interface GlobalSearchProps {
   suppliers: Supplier[];
   onSupplierSelect: (supplier: Supplier) => void;
   onCriteriaSelect: (criteria: any) => void;
+  onReportSelect?: (report: any) => void;
+  onViewChange?: (view: string) => void;
 }
 
-export const GlobalSearch = ({ suppliers, onSupplierSelect, onCriteriaSelect }: GlobalSearchProps) => {
+export const GlobalSearch = ({ suppliers, onSupplierSelect, onCriteriaSelect, onReportSelect, onViewChange }: GlobalSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -106,9 +109,34 @@ export const GlobalSearch = ({ suppliers, onSupplierSelect, onCriteriaSelect }: 
     // Search reports (mock data)
     if (activeFilter === 'all' || activeFilter === 'reports') {
       const mockReports = [
-        { id: 'report-1', name: 'Supplier Performance Analysis', category: 'Performance', description: 'Comprehensive performance analytics and trends' },
-        { id: 'report-2', name: 'Risk Assessment Report', category: 'Risk', description: 'Detailed risk evaluation and mitigation strategies' },
-        { id: 'report-3', name: 'Industry Benchmarking', category: 'Benchmarking', description: 'Comparative analysis across industries' }
+        { 
+          id: 'report-1', 
+          name: 'Supplier Performance Analysis', 
+          category: 'Performance', 
+          description: 'Comprehensive performance analytics and trends',
+          type: 'analytics'
+        },
+        { 
+          id: 'report-2', 
+          name: 'Risk Assessment Report', 
+          category: 'Risk', 
+          description: 'Detailed risk evaluation and mitigation strategies',
+          type: 'risk'
+        },
+        { 
+          id: 'report-3', 
+          name: 'Industry Benchmarking', 
+          category: 'Benchmarking', 
+          description: 'Comparative analysis across industries',
+          type: 'benchmark'
+        },
+        { 
+          id: 'report-4', 
+          name: 'Compliance Audit Report', 
+          category: 'Compliance', 
+          description: 'Regulatory compliance and audit findings',
+          type: 'compliance'
+        }
       ];
 
       mockReports.forEach(report => {
@@ -173,15 +201,28 @@ export const GlobalSearch = ({ suppliers, onSupplierSelect, onCriteriaSelect }: 
       onSupplierSelect(result.data);
     } else if (result.type === 'criteria') {
       onCriteriaSelect(result.data);
+    } else if (result.type === 'report' && onReportSelect) {
+      onReportSelect(result.data);
     }
     setSearchTerm(result.title);
     setIsOpen(false);
     setSelectedIndex(-1);
   };
 
+  const handleFilterClick = (filter: 'all' | 'suppliers' | 'criteria' | 'reports') => {
+    setActiveFilter(filter);
+    
+    // Handle special filter actions
+    if (filter === 'criteria' && onViewChange) {
+      onViewChange('matrix');
+    } else if (filter === 'reports' && onViewChange) {
+      onViewChange('analytics');
+    }
+  };
+
   const getResultIcon = (type: string) => {
     switch (type) {
-      case 'supplier': return <Users className="w-4 h-4 text-blue-600" />;
+      case 'supplier': return <Building2 className="w-4 h-4 text-blue-600" />;
       case 'criteria': return <Target className="w-4 h-4 text-green-600" />;
       case 'report': return <FileText className="w-4 h-4 text-purple-600" />;
       default: return <Search className="w-4 h-4 text-gray-600" />;
@@ -214,110 +255,123 @@ export const GlobalSearch = ({ suppliers, onSupplierSelect, onCriteriaSelect }: 
   }, []);
 
   return (
-    <div className="relative flex-1 max-w-2xl">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <Input
-          ref={searchRef}
-          placeholder="Search suppliers, criteria, reports..."
-          value={searchTerm}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsOpen(searchTerm.length > 0)}
-          className="glass-input border-0 pl-12 pr-20 h-14 rounded-2xl text-base shadow-lg"
-        />
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-          {searchTerm && (
-            <button
-              onClick={clearSearch}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-          <Filter className="w-4 h-4 text-gray-400" />
-        </div>
-      </div>
-
-      {/* Filter Buttons */}
-      <div className="flex gap-2 mt-3">
-        {(['all', 'suppliers', 'criteria', 'reports'] as const).map((filter) => (
-          <Button
-            key={filter}
-            variant={activeFilter === filter ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveFilter(filter)}
-            className={`rounded-xl smooth-transition ${
-              activeFilter === filter 
-                ? "liquid-button text-white" 
-                : "frosted-glass border-0 hover-glow"
-            }`}
-          >
-            {filter === 'all' && <TrendingUp className="w-3 h-3 mr-1" />}
-            {filter === 'suppliers' && <Users className="w-3 h-3 mr-1" />}
-            {filter === 'criteria' && <Target className="w-3 h-3 mr-1" />}
-            {filter === 'reports' && <FileText className="w-3 h-3 mr-1" />}
-            {filter.charAt(0).toUpperCase() + filter.slice(1)}
-          </Button>
-        ))}
-      </div>
-
-      {/* Search Results Dropdown */}
-      {isOpen && searchResults.length > 0 && (
-        <Card 
-          ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-2 py-3 z-50 shadow-2xl border-0 frosted-glass max-h-96 overflow-y-auto"
-        >
-          <div className="px-4 py-2 border-b border-white/20">
-            <p className="text-sm text-gray-600 font-medium">
-              Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-            </p>
+    <TooltipProvider>
+      <div className="relative flex-1 max-w-3xl mx-auto">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+          <Input
+            ref={searchRef}
+            placeholder="Search suppliers, criteria, reports..."
+            value={searchTerm}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsOpen(searchTerm.length > 0)}
+            className="glass-input border-0 pl-12 pr-20 h-14 rounded-2xl text-base shadow-lg w-full"
+          />
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="text-gray-400 hover:text-gray-600 transition-colors z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <Filter className="w-4 h-4 text-gray-400" />
           </div>
-          {searchResults.map((result, index) => (
-            <div
-              key={result.id}
-              onClick={() => handleResultSelect(result)}
-              className={`px-4 py-4 cursor-pointer transition-all duration-200 ${
-                index === selectedIndex 
-                  ? 'bg-gradient-to-r from-blue-50/80 to-purple-50/80 border-l-4 border-blue-500' 
-                  : 'hover:bg-white/20'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="glass-card p-2 rounded-lg">
-                  {getResultIcon(result.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold text-gray-900 truncate">{result.title}</h4>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs glass-card border-0"
-                    >
-                      {result.type}
-                    </Badge>
-                    {result.score && result.score > 80 && (
-                      <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-                        Exact match
-                      </Badge>
-                    )}
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2 mt-3 justify-center">
+          {([
+            { key: 'all', label: 'All', icon: TrendingUp, tooltip: 'Search across all categories' },
+            { key: 'suppliers', label: 'Suppliers', icon: Users, tooltip: 'Find suppliers by name or industry' },
+            { key: 'criteria', label: 'Criteria', icon: Target, tooltip: 'Search evaluation criteria and view matrix' },
+            { key: 'reports', label: 'Reports', icon: BarChart3, tooltip: 'Access analytics reports and insights' }
+          ] as const).map((filter) => (
+            <Tooltip key={filter.key}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={activeFilter === filter.key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFilterClick(filter.key)}
+                  className={`rounded-xl smooth-transition relative ${
+                    activeFilter === filter.key 
+                      ? "liquid-button text-white shadow-lg" 
+                      : "frosted-glass border-0 hover-glow"
+                  }`}
+                >
+                  <filter.icon className="w-3 h-3 mr-2" />
+                  {filter.label}
+                  <div className="absolute -top-1 -right-1">
+                    <Info className="w-3 h-3 text-blue-400 opacity-70" />
                   </div>
-                  <p className="text-sm text-blue-600 font-medium mb-1">{result.subtitle}</p>
-                  <p className="text-xs text-gray-600 line-clamp-2">{result.description}</p>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="glass-card border-0 max-w-xs">
+                <p className="text-sm">{filter.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+
+        {/* Search Results Dropdown */}
+        {isOpen && searchResults.length > 0 && (
+          <Card 
+            ref={dropdownRef}
+            className="absolute top-full left-0 right-0 mt-2 py-3 z-50 shadow-2xl border-0 frosted-glass max-h-96 overflow-y-auto"
+          >
+            <div className="px-4 py-2 border-b border-white/20">
+              <p className="text-sm text-gray-600 font-medium">
+                Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            {searchResults.map((result, index) => (
+              <div
+                key={result.id}
+                onClick={() => handleResultSelect(result)}
+                className={`px-4 py-4 cursor-pointer transition-all duration-200 ${
+                  index === selectedIndex 
+                    ? 'bg-gradient-to-r from-blue-50/80 to-purple-50/80 border-l-4 border-blue-500' 
+                    : 'hover:bg-white/20'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="glass-card p-2 rounded-lg">
+                    {getResultIcon(result.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-gray-900 truncate">{result.title}</h4>
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs glass-card border-0"
+                      >
+                        {result.type}
+                      </Badge>
+                      {result.score && result.score > 80 && (
+                        <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                          Exact match
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-blue-600 font-medium mb-1">{result.subtitle}</p>
+                    <p className="text-xs text-gray-600 line-clamp-2">{result.description}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {searchTerm && searchResults.length === 0 && (
-            <div className="px-4 py-8 text-center text-gray-500">
-              <Search className="w-8 h-8 mx-auto mb-3 opacity-50" />
-              <p className="font-medium">No results found</p>
-              <p className="text-sm mt-1">Try adjusting your search terms or filters</p>
-            </div>
-          )}
-        </Card>
-      )}
-    </div>
+            ))}
+            
+            {searchTerm && searchResults.length === 0 && (
+              <div className="px-4 py-8 text-center text-gray-500">
+                <Search className="w-8 h-8 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">No results found</p>
+                <p className="text-sm mt-1">Try adjusting your search terms or filters</p>
+              </div>
+            )}
+          </Card>
+        )}
+      </div>
+    </TooltipProvider>
   );
 };

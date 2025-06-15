@@ -1,196 +1,117 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEFAULT_CRITERIA, SCORING_SCALE } from "@/types/supplier";
-import { mockSuppliers, mockScores } from "@/data/mockData";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  LineChart, Line, AreaChart, Area, ScatterChart, Scatter, RadarChart, PolarGrid, 
-  PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell 
-} from "recharts";
-import { 
-  TrendingUp, TrendingDown, AlertTriangle, Award, Target, 
-  Download, BarChart3, Users, Clock, Star, AlertCircle, CheckCircle, ArrowUpRight
-} from "lucide-react";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart3, FileText, Users, TrendingUp } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { Supplier } from "@/types/supplier";
 
-export const AdvancedAnalytics = () => {
-  const [timeRange, setTimeRange] = useState("6months");
-  const [selectedMetric, setSelectedMetric] = useState("overall");
-  const [reportType, setReportType] = useState("performance");
-  const [isExporting, setIsExporting] = useState(false);
+interface AdvancedAnalyticsProps {
+  suppliers: Supplier[];
+}
 
-  // Calculate comprehensive metrics
-  const calculateSupplierScore = (supplierId: string) => {
-    const supplierScores = mockScores.filter(score => score.supplierId === supplierId);
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
+const SCORING_SCALE = {
+  EXCELLENT: { label: 'Excellent', minScore: 90 },
+  GOOD: { label: 'Good', minScore: 75 },
+  SATISFACTORY: { label: 'Satisfactory', minScore: 60 },
+  NEEDS_IMPROVEMENT: { label: 'Needs Improvement', minScore: 40 },
+  POOR: { label: 'Poor', minScore: 0 },
+};
 
-    DEFAULT_CRITERIA.forEach(criteria => {
-      const score = supplierScores.find(s => s.criteriaId === criteria.id);
-      if (score) {
-        totalWeightedScore += (score.score * criteria.weight) / 100;
-        totalWeight += criteria.weight;
-      }
+export const EvaluationAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
+  const [timeframe, setTimeframe] = useState("last_quarter");
+
+  // Mock supplier scores (replace with actual data)
+  const suppliersWithScores = useMemo(() => {
+    return suppliers.map(supplier => {
+      const totalScore = Math.floor(Math.random() * 100); // Generate a random score between 0 and 99
+      return { ...supplier, totalScore };
     });
+  }, [suppliers]);
 
-    return totalWeight > 0 ? totalWeightedScore : 0;
-  };
+  // Time-based data filtering (mock)
+  const filteredSuppliers = useMemo(() => {
+    // Mock date filtering logic
+    const now = new Date();
+    let startDate;
 
-  const suppliersWithScores = mockSuppliers
-    .filter(supplier => supplier.status === 'active')
-    .map(supplier => ({
-      ...supplier,
-      totalScore: calculateSupplierScore(supplier.id)
-    }))
-    .sort((a, b) => b.totalScore - a.totalScore);
-
-  // Enhanced export functionality
-  const handleExportReport = async () => {
-    setIsExporting(true);
-    try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const element = document.getElementById('analytics-dashboard');
-      
-      if (element) {
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        // Add title page
-        pdf.setFontSize(20);
-        pdf.text('Supplier Analytics Report', 20, 30);
-        pdf.setFontSize(12);
-        pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
-        pdf.text(`Time Range: ${timeRange}`, 20, 50);
-        
-        // Add summary stats
-        const metrics = calculateMetrics();
-        pdf.text(`Total Suppliers: ${metrics.totalSuppliers}`, 20, 70);
-        pdf.text(`Average Score: ${metrics.avgScore.toFixed(1)}`, 20, 80);
-        pdf.text(`Top Performers: ${metrics.topPerformers}`, 20, 90);
-        pdf.text(`Risk Suppliers: ${metrics.riskSuppliers}`, 20, 100);
-
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
-
-        pdf.save(`supplier-analytics-report-${new Date().getTime()}.pdf`);
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    } finally {
-      setIsExporting(false);
+    switch (timeframe) {
+      case "last_month":
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        break;
+      case "last_quarter":
+        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        break;
+      case "last_year":
+        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        break;
+      default:
+        return suppliersWithScores;
     }
-  };
 
-  // Calculate metrics
-  const calculateMetrics = () => ({
-    totalSuppliers: suppliersWithScores.length,
-    avgScore: suppliersWithScores.reduce((sum, s) => sum + s.totalScore, 0) / suppliersWithScores.length,
-    topPerformers: suppliersWithScores.filter(s => s.totalScore >= 90).length,
-    underPerformers: suppliersWithScores.filter(s => s.totalScore < 60).length,
-    scoreVariance: (() => {
-      const scores = suppliersWithScores.map(s => s.totalScore);
-      const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-      return Math.sqrt(scores.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / scores.length);
-    })(),
-    industryDiversity: new Set(suppliersWithScores.map(s => s.industry)).size,
-    evaluationCompletion: (mockScores.length / (suppliersWithScores.length * DEFAULT_CRITERIA.length)) * 100,
-    riskSuppliers: suppliersWithScores.filter(s => s.totalScore < 70).length
-  });
+    return suppliersWithScores.filter(supplier => {
+      const supplierDate = new Date(supplier.createdAt);
+      return supplierDate >= startDate;
+    });
+  }, [timeframe, suppliersWithScores]);
 
-  const metrics = calculateMetrics();
-
-  // Fixed performance distribution data
+  // Performance distribution data
   const performanceDistribution = Object.entries(SCORING_SCALE).map(([key, scale]) => {
-    const count = suppliersWithScores.filter(supplier => 
-      supplier.totalScore >= scale.min && supplier.totalScore <= scale.max
-    ).length;
+    const count = suppliersWithScores.filter((supplier) => {
+      if (key === 'EXCELLENT') return supplier.totalScore >= 90;
+      if (key === 'GOOD') return supplier.totalScore >= 75 && supplier.totalScore < 90;
+      if (key === 'SATISFACTORY') return supplier.totalScore >= 60 && supplier.totalScore < 75;
+      if (key === 'NEEDS_IMPROVEMENT') return supplier.totalScore >= 40 && supplier.totalScore < 60;
+      if (key === 'POOR') return supplier.totalScore < 40;
+      return false;
+    }).length;
     
     return {
       name: scale.label,
       count: count,
-      percentage: suppliersWithScores.length > 0 ? (count / suppliersWithScores.length) * 100 : 0,
+      percentage: suppliersWithScores.length > 0 ? (count / suppliersWithScores.length * 100) : 0,
       fill: key === 'EXCELLENT' ? '#10B981' : 
-            key === 'GOOD' ? '#3B82F6' :
-            key === 'SATISFACTORY' ? '#F59E0B' :
+            key === 'GOOD' ? '#3B82F6' : 
+            key === 'SATISFACTORY' ? '#F59E0B' : 
             key === 'NEEDS_IMPROVEMENT' ? '#EF4444' : '#8B5CF6'
     };
-  });
+  }).filter(item => item.count > 0); // Only show categories with data
 
-  // Criteria performance data
-  const criteriaPerformance = DEFAULT_CRITERIA.map(criteria => {
-    const scores = mockScores
-      .filter(score => score.criteriaId === criteria.id)
-      .map(score => score.score);
-    
-    const average = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
-    const trend = Math.random() > 0.5 ? 'up' : 'down';
-    const change = (Math.random() * 10 - 5).toFixed(1);
-    
-    return {
-      name: criteria.name,
-      weight: criteria.weight,
-      average: average,
-      trend: trend,
-      change: change,
-      category: criteria.category,
-      risk: average < 60 ? 'high' : average < 75 ? 'medium' : 'low'
-    };
-  });
+  // Mock risk distribution data
+  const riskDistribution = useMemo(() => {
+    const highRisk = filteredSuppliers.filter(s => s.totalScore < 50).length;
+    const mediumRisk = filteredSuppliers.filter(s => s.totalScore >= 50 && s.totalScore < 75).length;
+    const lowRisk = filteredSuppliers.filter(s => s.totalScore >= 75).length;
 
-  // Industry analysis
-  const industryAnalysis = Array.from(new Set(suppliersWithScores.map(s => s.industry))).map(industry => {
-    const industrySuppliers = suppliersWithScores.filter(s => s.industry === industry);
-    const avgScore = industrySuppliers.reduce((sum, s) => sum + s.totalScore, 0) / industrySuppliers.length;
-    
-    return {
-      industry,
-      count: industrySuppliers.length,
-      avgScore: avgScore,
-      topPerformer: industrySuppliers[0]?.name || 'N/A',
-      risk: avgScore < 60 ? 'high' : avgScore < 75 ? 'medium' : 'low'
-    };
-  }).sort((a, b) => b.avgScore - a.avgScore);
+    const total = filteredSuppliers.length;
 
-  // Time series data
-  const timeSeriesData = Array.from({ length: 12 }, (_, i) => ({
-    month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-    avgScore: 75 + Math.sin(i / 2) * 10 + Math.random() * 5,
-    evaluations: Math.floor(Math.random() * 20) + 10,
-    newSuppliers: Math.floor(Math.random() * 5) + 1
-  }));
+    return [
+      { name: "High Risk", value: highRisk, percentage: total > 0 ? (highRisk / total) * 100 : 0, fill: '#EF4444' },
+      { name: "Medium Risk", value: mediumRisk, percentage: total > 0 ? (mediumRisk / total) * 100 : 0, fill: '#F59E0B' },
+      { name: "Low Risk", value: lowRisk, percentage: total > 0 ? (lowRisk / total) * 100 : 0, fill: '#10B981' },
+    ];
+  }, [filteredSuppliers]);
 
-  // Improved renderCustomizedLabel function
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+  // Mock compliance status data
+  const complianceData = useMemo(() => {
+    const compliant = filteredSuppliers.filter(s => s.totalScore > 60).length;
+    const nonCompliant = filteredSuppliers.length - compliant;
+    const total = filteredSuppliers.length;
+
+    return [
+      { name: "Compliant", value: compliant, percentage: total > 0 ? (compliant / total) * 100 : 0, fill: '#3B82F6' },
+      { name: "Non-Compliant", value: nonCompliant, percentage: total > 0 ? (nonCompliant / total) * 100 : 0, fill: '#9CA3AF' },
+    ];
+  }, [filteredSuppliers]);
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
     if (percent < 0.05) return null; // Don't show labels for very small slices
     
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
+    
     return (
       <text 
         x={x} 
@@ -198,10 +119,9 @@ export const AdvancedAnalytics = () => {
         fill="white" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        fontSize="11"
+        fontSize="12"
         fontWeight="bold"
-        stroke="rgba(0,0,0,0.3)"
-        strokeWidth="0.5"
+        className="drop-shadow-lg"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -209,478 +129,367 @@ export const AdvancedAnalytics = () => {
   };
 
   return (
-    <div id="analytics-dashboard" className="space-y-6">
-      {/* Header with Controls */}
-      <div className="glass-card p-6 rounded-2xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div>
-            <h2 className="text-3xl font-bold gradient-text">Advanced Analytics Dashboard</h2>
-            <p className="text-gray-600 mt-1">Comprehensive insights into supplier performance and evaluation trends</p>
-          </div>
-          <div className="flex gap-2">
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="glass-input border-0 w-32 h-10 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="glass-card border-0">
-                <SelectItem value="3months">3 Months</SelectItem>
-                <SelectItem value="6months">6 Months</SelectItem>
-                <SelectItem value="1year">1 Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleExportReport}
-              disabled={isExporting}
-              className="frosted-glass border-0 hover-glow rounded-xl"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* Analytics Header */}
+      <Card className="glass-card border-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
+            <FileText className="w-6 h-6 text-purple-500" />
+            Advanced Analytics
+          </CardTitle>
+          <Select value={timeframe} onValueChange={setTimeframe}>
+            <SelectTrigger className="w-[180px] h-10 glass-input border-0">
+              <SelectValue placeholder="Select Timeframe" />
+            </SelectTrigger>
+            <SelectContent className="glass-card border-0">
+              <SelectItem value="last_month">Last Month</SelectItem>
+              <SelectItem value="last_quarter">Last Quarter</SelectItem>
+              <SelectItem value="last_year">Last Year</SelectItem>
+              <SelectItem value="all_time">All Time</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardHeader>
+      </Card>
 
-      {/* Enhanced Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Total Suppliers</p>
-                <p className="text-2xl font-bold text-blue-900">{metrics.totalSuppliers}</p>
-                <p className="text-xs text-blue-600 flex items-center mt-1">
-                  <ArrowUpRight className="w-3 h-3 mr-1" />
-                  +{metrics.industryDiversity} Industries
-                </p>
-              </div>
-              <div className="glass-card p-3 rounded-xl">
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Tabs for different analytics views */}
+      <Tabs defaultValue="performance" className="space-y-4">
+        <TabsList className="bg-transparent p-0 border-0 flex justify-center">
+          <TabsTrigger value="performance" className="data-[state=active]:bg-secondary data-[state=active]:text-foreground liquid-button text-white">
+            Performance Trends
+          </TabsTrigger>
+          <TabsTrigger value="risk" className="data-[state=active]:bg-secondary data-[state=active]:text-foreground liquid-button text-white">
+            Risk Assessment
+          </TabsTrigger>
+          <TabsTrigger value="compliance" className="data-[state=active]:bg-secondary data-[state=active]:text-foreground liquid-button text-white">
+            Compliance Overview
+          </TabsTrigger>
+        </TabsList>
 
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Average Score</p>
-                <p className="text-2xl font-bold text-green-900">{metrics.avgScore.toFixed(1)}</p>
-                <p className="text-xs text-green-600 flex items-center mt-1">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  σ = {metrics.scoreVariance.toFixed(1)}
-                </p>
-              </div>
-              <div className="glass-card p-3 rounded-xl">
-                <Target className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Top Performers</p>
-                <p className="text-2xl font-bold text-purple-900">{metrics.topPerformers}</p>
-                <p className="text-xs text-purple-600 flex items-center mt-1">
-                  <Award className="w-3 h-3 mr-1" />
-                  {((metrics.topPerformers / metrics.totalSuppliers) * 100).toFixed(0)}% of total
-                </p>
-              </div>
-              <div className="glass-card p-3 rounded-xl">
-                <Star className="w-8 h-8 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">Risk Suppliers</p>
-                <p className="text-2xl font-bold text-orange-900">{metrics.riskSuppliers}</p>
-                <p className="text-xs text-orange-600 flex items-center mt-1">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Need attention
-                </p>
-              </div>
-              <div className="glass-card p-3 rounded-xl">
-                <AlertCircle className="w-8 h-8 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Evaluation Completion</p>
-                <p className="text-xl font-bold text-gray-900">{metrics.evaluationCompletion.toFixed(1)}%</p>
-              </div>
-              <div className="glass-card p-2 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Industry Diversity</p>
-                <p className="text-xl font-bold text-gray-900">{metrics.industryDiversity}</p>
-              </div>
-              <div className="glass-card p-2 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="frosted-glass border-0 hover-glow smooth-transition">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Total Evaluations</p>
-                <p className="text-xl font-bold text-gray-900">{mockScores.length}</p>
-              </div>
-              <div className="glass-card p-2 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Enhanced Analytics Tabs with Liquid Glass Design */}
-      <Tabs defaultValue="performance" className="space-y-6">
-        <div className="glass-card p-2 rounded-2xl">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-transparent rounded-xl p-1">
-            <TabsTrigger 
-              value="performance" 
-              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
-            >
-              Performance Trends
-            </TabsTrigger>
-            <TabsTrigger 
-              value="criteria" 
-              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
-            >
-              Criteria Analysis
-            </TabsTrigger>
-            <TabsTrigger 
-              value="industry" 
-              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
-            >
-              Industry Insights
-            </TabsTrigger>
-            <TabsTrigger 
-              value="risk" 
-              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
-            >
-              Risk Assessment
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
+        {/* Performance Trends */}
         <TabsContent value="performance" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Performance Distribution - Enhanced */}
             <Card className="frosted-glass border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  Performance Over Time
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={[]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="avgScore" stroke="#3B82F6" strokeWidth={3} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="frosted-glass border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-green-600" />
+                  <div className="glass-card p-2 rounded-lg">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  </div>
                   Performance Distribution
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={performanceDistribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="count"
-                      stroke="#ffffff"
-                      strokeWidth={2}
-                    >
-                      {performanceDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value, name, props) => [
-                        `${value} suppliers (${props.payload.percentage.toFixed(1)}%)`, 
-                        props.payload.name
-                      ]}
-                    />
-                    <Legend 
-                      wrapperStyle={{ paddingTop: '20px' }}
-                      formatter={(value, entry) => (
-                        <span style={{ color: entry.color }}>
-                          {value} ({performanceDistribution.find(d => d.name === value)?.count || 0})
-                        </span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="criteria" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Criteria Performance Radar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RadarChart data={criteriaPerformance}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    <Radar name="Average Score" dataKey="average" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} strokeWidth={2} />
-                    <Tooltip />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Criteria Weight vs Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={criteriaPerformance}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="weight" name="Weight %" />
-                    <YAxis dataKey="average" name="Average Score" />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter dataKey="average" fill="#8884d8" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Detailed Criteria Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {criteriaPerformance.map((criteria) => (
-                  <div key={criteria.name} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium">{criteria.name}</h4>
-                        <Badge variant={criteria.risk === 'high' ? 'destructive' : criteria.risk === 'medium' ? 'secondary' : 'default'}>
-                          {criteria.risk} risk
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">Weight: {criteria.weight}%</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold">{criteria.average.toFixed(1)}</span>
-                        {criteria.trend === 'up' ? (
-                          <TrendingUp className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4 text-red-600" />
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={performanceDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                        outerRadius={100}
+                        innerRadius={40}
+                        fill="#8884d8"
+                        dataKey="count"
+                        stroke="rgba(255,255,255,0.3)"
+                        strokeWidth={2}
+                      >
+                        {performanceDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(20px)'
+                        }}
+                        formatter={(value, name) => [
+                          `${value} suppliers (${((value as number) / suppliersWithScores.length * 100).toFixed(1)}%)`,
+                          'Count'
+                        ]}
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => (
+                          <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                            {value}
+                          </span>
                         )}
-                        <span className={`text-sm ${criteria.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                          {criteria.change}%
-                        </span>
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Performance Summary */}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {performanceDistribution.map((item, index) => (
+                    <div key={index} className="glass-card p-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-sm font-medium">{item.name}</span>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="industry" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Industry Performance Comparison</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={industryAnalysis} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="industry" type="category" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="avgScore" fill="#3B82F6" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Industry Supplier Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={industryAnalysis}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ industry, count }) => `${industry}: ${count}`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="count"
-                    >
-                      {industryAnalysis.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {industryAnalysis.map((industry) => (
-              <Card key={industry.industry}>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium">{industry.industry}</h4>
-                      <Badge variant={industry.risk === 'high' ? 'destructive' : industry.risk === 'medium' ? 'secondary' : 'default'}>
-                        {industry.risk}
-                      </Badge>
-                    </div>
-                    <div className="text-2xl font-bold text-blue-900">{industry.avgScore.toFixed(1)}</div>
-                    <div className="text-sm text-gray-600">
-                      <p>{industry.count} suppliers</p>
-                      <p>Top: {industry.topPerformer}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="risk" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Risk Assessment Matrix</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart data={suppliersWithScores}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="totalScore" name="Performance Score" />
-                    <YAxis dataKey="establishedYear" name="Years Established" />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter dataKey="totalScore" fill="#ef4444" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Risk Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'High Risk', value: suppliersWithScores.filter(s => s.totalScore < 60).length, fill: '#ef4444' },
-                        { name: 'Medium Risk', value: suppliersWithScores.filter(s => s.totalScore >= 60 && s.totalScore < 75).length, fill: '#f59e0b' },
-                        { name: 'Low Risk', value: suppliersWithScores.filter(s => s.totalScore >= 75).length, fill: '#10b981' }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomizedLabel}
-                      outerRadius={100}
-                      dataKey="value"
-                    />
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>High-Risk Suppliers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {suppliersWithScores
-                  .filter(s => s.totalScore < 70)
-                  .slice(0, 5)
-                  .map((supplier) => (
-                    <div key={supplier.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
-                      <div>
-                        <h4 className="font-medium">{supplier.name}</h4>
-                        <p className="text-sm text-gray-600">{supplier.industry}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-red-600">{supplier.totalScore.toFixed(1)}</div>
-                        <Badge variant="destructive">High Risk</Badge>
-                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {item.count} suppliers ({item.percentage.toFixed(1)}%)
+                      </p>
                     </div>
                   ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Performing Suppliers */}
+            <Card className="frosted-glass border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="glass-card p-2 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
+                  Top Performing Suppliers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {filteredSuppliers
+                    .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-green-600">{supplier.totalScore}%</div>
+                      </li>
+                    ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Risk Assessment */}
+        <TabsContent value="risk" className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Risk Distribution */}
+            <Card className="frosted-glass border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="glass-card p-2 rounded-lg">
+                    <Alert className="w-5 h-5 text-red-600" />
+                  </div>
+                  Risk Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={riskDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {riskDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(20px)'
+                        }}
+                        formatter={(value, name) => [
+                          `${value} suppliers (${((value as number) / filteredSuppliers.length * 100).toFixed(1)}%)`,
+                          'Count'
+                        ]}
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => (
+                          <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                            {value}
+                          </span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Risk Summary */}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {riskDistribution.map((item, index) => (
+                    <div key={index} className="glass-card p-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {item.value} suppliers ({item.percentage.toFixed(1)}%)
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* High Risk Suppliers */}
+            <Card className="frosted-glass border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="glass-card p-2 rounded-lg">
+                    <Users className="w-5 h-5 text-red-600" />
+                  </div>
+                  High Risk Suppliers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {filteredSuppliers
+                    .filter(s => s.totalScore < 50)
+                    .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-red-600">{supplier.totalScore}%</div>
+                      </li>
+                    ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Compliance Overview */}
+        <TabsContent value="compliance" className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Compliance Status */}
+            <Card className="frosted-glass border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="glass-card p-2 rounded-lg">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  Compliance Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={complianceData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {complianceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                          backdropFilter: 'blur(20px)'
+                        }}
+                        formatter={(value, name) => [
+                          `${value} suppliers (${((value as number) / filteredSuppliers.length * 100).toFixed(1)}%)`,
+                          'Count'
+                        ]}
+                      />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => (
+                          <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                            {value}
+                          </span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Compliance Summary */}
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {complianceData.map((item, index) => (
+                    <div key={index} className="glass-card p-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {item.value} suppliers ({item.percentage.toFixed(1)}%)
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Non-Compliant Suppliers */}
+            <Card className="frosted-glass border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="glass-card p-2 rounded-lg">
+                    <Users className="w-5 h-5 text-gray-500" />
+                  </div>
+                  Non-Compliant Suppliers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3">
+                  {filteredSuppliers
+                    .filter(s => s.totalScore <= 60)
+                    .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-gray-500">{supplier.totalScore}%</div>
+                      </li>
+                    ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 };
+
+import { Alert } from "lucide-react";
