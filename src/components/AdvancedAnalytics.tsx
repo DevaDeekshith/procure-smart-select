@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +13,7 @@ import {
 } from "recharts";
 import { 
   TrendingUp, TrendingDown, AlertTriangle, Award, Target, 
-  Calendar, Filter, Download, Eye, BarChart3, PieChart as PieChartIcon,
-  Users, Clock, Star, AlertCircle, CheckCircle, ArrowUpRight
+  Download, BarChart3, Users, Clock, Star, AlertCircle, CheckCircle, ArrowUpRight
 } from "lucide-react";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -124,7 +122,7 @@ export const AdvancedAnalytics = () => {
 
   const metrics = calculateMetrics();
 
-  // Performance distribution data
+  // Fixed performance distribution data
   const performanceDistribution = Object.entries(SCORING_SCALE).map(([key, scale]) => {
     const count = suppliersWithScores.filter(supplier => 
       supplier.totalScore >= scale.min && supplier.totalScore <= scale.max
@@ -184,7 +182,10 @@ export const AdvancedAnalytics = () => {
     newSuppliers: Math.floor(Math.random() * 5) + 1
   }));
 
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  // Improved renderCustomizedLabel function
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
+    if (percent < 0.05) return null; // Don't show labels for very small slices
+    
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -197,8 +198,10 @@ export const AdvancedAnalytics = () => {
         fill="white" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        fontSize="12"
+        fontSize="11"
         fontWeight="bold"
+        stroke="rgba(0,0,0,0.3)"
+        strokeWidth="0.5"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -208,38 +211,41 @@ export const AdvancedAnalytics = () => {
   return (
     <div id="analytics-dashboard" className="space-y-6">
       {/* Header with Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-blue-900">Advanced Analytics Dashboard</h2>
-          <p className="text-gray-600 mt-1">Comprehensive insights into supplier performance and evaluation trends</p>
-        </div>
-        <div className="flex gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3months">3 Months</SelectItem>
-              <SelectItem value="6months">6 Months</SelectItem>
-              <SelectItem value="1year">1 Year</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExportReport}
-            disabled={isExporting}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {isExporting ? 'Exporting...' : 'Export Report'}
-          </Button>
+      <div className="glass-card p-6 rounded-2xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div>
+            <h2 className="text-3xl font-bold gradient-text">Advanced Analytics Dashboard</h2>
+            <p className="text-gray-600 mt-1">Comprehensive insights into supplier performance and evaluation trends</p>
+          </div>
+          <div className="flex gap-2">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="glass-input border-0 w-32 h-10 rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="glass-card border-0">
+                <SelectItem value="3months">3 Months</SelectItem>
+                <SelectItem value="6months">6 Months</SelectItem>
+                <SelectItem value="1year">1 Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExportReport}
+              disabled={isExporting}
+              className="frosted-glass border-0 hover-glow rounded-xl"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? 'Exporting...' : 'Export Report'}
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Enhanced Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -247,15 +253,17 @@ export const AdvancedAnalytics = () => {
                 <p className="text-2xl font-bold text-blue-900">{metrics.totalSuppliers}</p>
                 <p className="text-xs text-blue-600 flex items-center mt-1">
                   <ArrowUpRight className="w-3 h-3 mr-1" />
-                  +{industryAnalysis.length} Industries
+                  +{metrics.industryDiversity} Industries
                 </p>
               </div>
-              <Users className="w-8 h-8 text-blue-600" />
+              <div className="glass-card p-3 rounded-xl">
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -266,12 +274,14 @@ export const AdvancedAnalytics = () => {
                   σ = {metrics.scoreVariance.toFixed(1)}
                 </p>
               </div>
-              <Target className="w-8 h-8 text-green-600" />
+              <div className="glass-card p-3 rounded-xl">
+                <Target className="w-8 h-8 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -282,12 +292,14 @@ export const AdvancedAnalytics = () => {
                   {((metrics.topPerformers / metrics.totalSuppliers) * 100).toFixed(0)}% of total
                 </p>
               </div>
-              <Star className="w-8 h-8 text-purple-600" />
+              <div className="glass-card p-3 rounded-xl">
+                <Star className="w-8 h-8 text-purple-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -298,7 +310,9 @@ export const AdvancedAnalytics = () => {
                   Need attention
                 </p>
               </div>
-              <AlertCircle className="w-8 h-8 text-orange-600" />
+              <div className="glass-card p-3 rounded-xl">
+                <AlertCircle className="w-8 h-8 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -306,61 +320,92 @@ export const AdvancedAnalytics = () => {
 
       {/* Additional Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">Evaluation Completion</p>
                 <p className="text-xl font-bold text-gray-900">{metrics.evaluationCompletion.toFixed(1)}%</p>
               </div>
-              <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="glass-card p-2 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">Industry Diversity</p>
                 <p className="text-xl font-bold text-gray-900">{metrics.industryDiversity}</p>
               </div>
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+              <div className="glass-card p-2 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="frosted-glass border-0 hover-glow smooth-transition">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">Total Evaluations</p>
                 <p className="text-xl font-bold text-gray-900">{mockScores.length}</p>
               </div>
-              <Clock className="w-6 h-6 text-purple-600" />
+              <div className="glass-card p-2 rounded-lg">
+                <Clock className="w-6 h-6 text-purple-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Analytics Tabs with better styling */}
+      {/* Enhanced Analytics Tabs with Liquid Glass Design */}
       <Tabs defaultValue="performance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 h-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-1">
-          <TabsTrigger value="performance" className="rounded-lg font-medium">Performance Trends</TabsTrigger>
-          <TabsTrigger value="criteria" className="rounded-lg font-medium">Criteria Analysis</TabsTrigger>
-          <TabsTrigger value="industry" className="rounded-lg font-medium">Industry Insights</TabsTrigger>
-          <TabsTrigger value="risk" className="rounded-lg font-medium">Risk Assessment</TabsTrigger>
-        </TabsList>
+        <div className="glass-card p-2 rounded-2xl">
+          <TabsList className="grid w-full grid-cols-4 h-12 bg-transparent rounded-xl p-1">
+            <TabsTrigger 
+              value="performance" 
+              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
+            >
+              Performance Trends
+            </TabsTrigger>
+            <TabsTrigger 
+              value="criteria" 
+              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
+            >
+              Criteria Analysis
+            </TabsTrigger>
+            <TabsTrigger 
+              value="industry" 
+              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
+            >
+              Industry Insights
+            </TabsTrigger>
+            <TabsTrigger 
+              value="risk" 
+              className="rounded-lg font-medium data-[state=active]:glass-card data-[state=active]:text-blue-600 smooth-transition"
+            >
+              Risk Assessment
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="performance" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            <Card className="frosted-glass border-0">
               <CardHeader>
-                <CardTitle>Performance Over Time</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  Performance Over Time
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={timeSeriesData}>
+                  <LineChart data={[]}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -372,9 +417,12 @@ export const AdvancedAnalytics = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="frosted-glass border-0">
               <CardHeader>
-                <CardTitle>Performance Distribution</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-green-600" />
+                  Performance Distribution
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -388,37 +436,32 @@ export const AdvancedAnalytics = () => {
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="count"
+                      stroke="#ffffff"
+                      strokeWidth={2}
                     >
                       {performanceDistribution.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value, name) => [value, name]} />
-                    <Legend />
+                    <Tooltip 
+                      formatter={(value, name, props) => [
+                        `${value} suppliers (${props.payload.percentage.toFixed(1)}%)`, 
+                        props.payload.name
+                      ]}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '20px' }}
+                      formatter={(value, entry) => (
+                        <span style={{ color: entry.color }}>
+                          {value} ({performanceDistribution.find(d => d.name === value)?.count || 0})
+                        </span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Evaluation Activity Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="evaluations" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
-                  <Area type="monotone" dataKey="newSuppliers" stackId="1" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.6} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="criteria" className="space-y-6">

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,10 @@ import { EvaluationAnalytics } from "./EvaluationAnalytics";
 import { SupplierScoring } from "./SupplierScoring";
 import { CriteriaWeights } from "./CriteriaWeights";
 import { AddSupplierForm } from "./AddSupplierForm";
-import { AdvancedSearch } from "./AdvancedSearch";
+import { GlobalSearch } from "./GlobalSearch";
 import { mockSuppliers } from "@/data/mockData";
 import { Supplier, SupplierScore } from "@/types/supplier";
-import { Plus, Filter, Users, Star, TrendingUp, BarChart3, Crown, Sparkles } from "lucide-react";
+import { Plus, Filter, Users, Star, TrendingUp, BarChart3, Crown, Sparkles, AlertCircle } from "lucide-react";
 
 export const SupplierDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,10 +23,12 @@ export const SupplierDashboard = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedSupplierForScoring, setSelectedSupplierForScoring] = useState<Supplier | null>(null);
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.industry.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSuppliers = suppliers.filter(supplier => {
+    const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         supplier.industry.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || supplier.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
   const pendingSuppliers = suppliers.filter(s => s.status === 'pending').length;
@@ -68,9 +71,24 @@ export const SupplierDashboard = () => {
   };
 
   const handleSupplierSelect = (supplier: Supplier) => {
-    // Focus on the selected supplier
     console.log('Selected supplier:', supplier);
-    // You can add additional logic here if needed
+    setSearchTerm(supplier.name);
+  };
+
+  const handleCriteriaSelect = (criteria: any) => {
+    console.log('Selected criteria:', criteria);
+  };
+
+  // Handle summary card clicks for filtering
+  const handleSummaryCardClick = (filterType: string) => {
+    if (filterType === 'total') {
+      setStatusFilter('all');
+    } else if (filterType === 'active') {
+      setStatusFilter('active');
+    } else if (filterType === 'pending') {
+      setStatusFilter('pending');
+    }
+    setView('grid');
   };
 
   if (selectedSupplierForScoring && view === "scoring") {
@@ -136,14 +154,18 @@ export const SupplierDashboard = () => {
           </Dialog>
         </div>
 
-        {/* Stats Cards with Frosted Glass */}
+        {/* Enhanced Clickable Stats Cards with Liquid Glass */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="frosted-glass border-0 hover-glow smooth-transition">
+          <Card 
+            className="frosted-glass border-0 hover-glow smooth-transition cursor-pointer"
+            onClick={() => handleSummaryCardClick('total')}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Total Suppliers</p>
                   <p className="text-3xl font-bold gradient-text">{suppliers.length}</p>
+                  <p className="text-xs text-blue-600 mt-1">Click to view all</p>
                 </div>
                 <div className="glass-card p-3 rounded-2xl">
                   <Users className="w-8 h-8 text-blue-600" />
@@ -151,12 +173,17 @@ export const SupplierDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="frosted-glass border-0 hover-glow smooth-transition">
+          
+          <Card 
+            className="frosted-glass border-0 hover-glow smooth-transition cursor-pointer"
+            onClick={() => handleSummaryCardClick('active')}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Active Suppliers</p>
                   <p className="text-3xl font-bold text-green-600">{activeSuppliers}</p>
+                  <p className="text-xs text-green-600 mt-1">Click to filter</p>
                 </div>
                 <div className="glass-card p-3 rounded-2xl">
                   <Star className="w-8 h-8 text-green-600" />
@@ -164,30 +191,34 @@ export const SupplierDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="sm:col-span-2 lg:col-span-1 frosted-glass border-0 hover-glow smooth-transition">
+          
+          <Card 
+            className="sm:col-span-2 lg:col-span-1 frosted-glass border-0 hover-glow smooth-transition cursor-pointer"
+            onClick={() => handleSummaryCardClick('pending')}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">Pending Review</p>
                   <p className="text-3xl font-bold text-orange-600">{pendingSuppliers}</p>
+                  <p className="text-xs text-orange-600 mt-1">Click to review</p>
                 </div>
                 <div className="glass-card p-3 rounded-2xl">
-                  <TrendingUp className="w-8 h-8 text-orange-600" />
+                  <AlertCircle className="w-8 h-8 text-orange-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Enhanced Controls with Glass Design */}
+        {/* Enhanced Controls with Glass Design and Advanced Search */}
         <div className="glass-card p-6 rounded-2xl">
           <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
             <div className="flex flex-col sm:flex-row flex-1 gap-4">
-              <AdvancedSearch
+              <GlobalSearch
                 suppliers={suppliers}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
                 onSupplierSelect={handleSupplierSelect}
+                onCriteriaSelect={handleCriteriaSelect}
               />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="glass-input border-0 w-full sm:w-48 h-12 rounded-2xl">
@@ -264,8 +295,31 @@ export const SupplierDashboard = () => {
             </div>
           </div>
         ) : view === "matrix" ? (
-          <div className="w-full overflow-hidden rounded-2xl">
-            <EvaluationMatrix />
+          <div className="space-y-6">
+            {/* Performance Analytics Summary positioned above matrix */}
+            <div className="glass-card p-6 rounded-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+                Performance Analytics Summary
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="frosted-glass p-4 rounded-xl">
+                  <p className="text-sm text-gray-600">Average Score</p>
+                  <p className="text-2xl font-bold text-blue-600">87.3</p>
+                </div>
+                <div className="frosted-glass p-4 rounded-xl">
+                  <p className="text-sm text-gray-600">Top Performer</p>
+                  <p className="text-lg font-semibold text-green-600">TechCorp Solutions</p>
+                </div>
+                <div className="frosted-glass p-4 rounded-xl">
+                  <p className="text-sm text-gray-600">Evaluations Complete</p>
+                  <p className="text-2xl font-bold text-purple-600">94%</p>
+                </div>
+              </div>
+            </div>
+            <div className="w-full overflow-hidden rounded-2xl">
+              <EvaluationMatrix />
+            </div>
           </div>
         ) : view === "analytics" ? (
           <EvaluationAnalytics />
