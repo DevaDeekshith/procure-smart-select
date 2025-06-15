@@ -380,7 +380,7 @@ export const SupplierDashboard = () => {
               </div>
             </div>
           ) : view === "analytics" ? (
-            <EvaluationAnalytics />
+            <EvaluationAnalytics suppliers={suppliers} />
           ) : null}
         </div>
       </div>

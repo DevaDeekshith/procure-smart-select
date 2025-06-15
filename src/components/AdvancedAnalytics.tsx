@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,11 +19,13 @@ const SCORING_SCALE = {
   POOR: { label: 'Poor', minScore: 0 },
 };
 
-export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
+export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) => {
   const [timeframe, setTimeframe] = useState("last_quarter");
 
   // Mock supplier scores (replace with actual data)
   const suppliersWithScores = useMemo(() => {
+    if (!suppliers || suppliers.length === 0) return [];
+    
     return suppliers.map(supplier => {
       const totalScore = Math.floor(Math.random() * 100); // Generate a random score between 0 and 99
       return { ...supplier, totalScore };
@@ -31,6 +34,8 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
 
   // Time-based data filtering (mock)
   const filteredSuppliers = useMemo(() => {
+    if (!suppliersWithScores || suppliersWithScores.length === 0) return [];
+
     // Mock date filtering logic
     const now = new Date();
     let startDate;
@@ -79,6 +84,14 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
 
   // Mock risk distribution data
   const riskDistribution = useMemo(() => {
+    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+      return [
+        { name: "High Risk", value: 0, percentage: 0, fill: '#EF4444' },
+        { name: "Medium Risk", value: 0, percentage: 0, fill: '#F59E0B' },
+        { name: "Low Risk", value: 0, percentage: 0, fill: '#10B981' },
+      ];
+    }
+
     const highRisk = filteredSuppliers.filter(s => s.totalScore < 50).length;
     const mediumRisk = filteredSuppliers.filter(s => s.totalScore >= 50 && s.totalScore < 75).length;
     const lowRisk = filteredSuppliers.filter(s => s.totalScore >= 75).length;
@@ -94,6 +107,13 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
 
   // Mock compliance status data
   const complianceData = useMemo(() => {
+    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+      return [
+        { name: "Compliant", value: 0, percentage: 0, fill: '#3B82F6' },
+        { name: "Non-Compliant", value: 0, percentage: 0, fill: '#9CA3AF' },
+      ];
+    }
+
     const compliant = filteredSuppliers.filter(s => s.totalScore > 60).length;
     const nonCompliant = filteredSuppliers.length - compliant;
     const total = filteredSuppliers.length;
@@ -127,6 +147,18 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
       </text>
     );
   };
+
+  // Show message if no suppliers
+  if (!suppliers || suppliers.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Card className="frosted-glass border-0 p-12 text-center">
+          <h2 className="text-2xl font-bold text-gray-700 mb-4">No Suppliers Available</h2>
+          <p className="text-gray-500 text-lg">Add suppliers to view analytics and performance metrics.</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -179,68 +211,76 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={performanceDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={renderCustomizedLabel}
-                        outerRadius={100}
-                        innerRadius={40}
-                        fill="#8884d8"
-                        dataKey="count"
-                        stroke="rgba(255,255,255,0.3)"
-                        strokeWidth={2}
-                      >
-                        {performanceDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          border: 'none',
-                          borderRadius: '12px',
-                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                          backdropFilter: 'blur(20px)'
-                        }}
-                        formatter={(value, name) => [
-                          `${value} suppliers (${((value as number) / suppliersWithScores.length * 100).toFixed(1)}%)`,
-                          'Count'
-                        ]}
-                      />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        formatter={(value, entry) => (
-                          <span style={{ color: entry.color, fontWeight: 'bold' }}>
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                {/* Performance Summary */}
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {performanceDistribution.map((item, index) => (
-                    <div key={index} className="glass-card p-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.fill }}
-                        />
-                        <span className="text-sm font-medium">{item.name}</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {item.count} suppliers ({item.percentage.toFixed(1)}%)
-                      </p>
+                {performanceDistribution.length > 0 ? (
+                  <>
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={performanceDistribution}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={renderCustomizedLabel}
+                            outerRadius={100}
+                            innerRadius={40}
+                            fill="#8884d8"
+                            dataKey="count"
+                            stroke="rgba(255,255,255,0.3)"
+                            strokeWidth={2}
+                          >
+                            {performanceDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: 'none',
+                              borderRadius: '12px',
+                              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                              backdropFilter: 'blur(20px)'
+                            }}
+                            formatter={(value, name) => [
+                              `${value} suppliers (${((value as number) / suppliersWithScores.length * 100).toFixed(1)}%)`,
+                              'Count'
+                            ]}
+                          />
+                          <Legend 
+                            verticalAlign="bottom" 
+                            height={36}
+                            formatter={(value, entry) => (
+                              <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                                {value}
+                              </span>
+                            )}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
-                </div>
+                    {/* Performance Summary */}
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {performanceDistribution.map((item, index) => (
+                        <div key={index} className="glass-card p-3 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: item.fill }}
+                            />
+                            <span className="text-sm font-medium">{item.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {item.count} suppliers ({item.percentage.toFixed(1)}%)
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-80 flex items-center justify-center">
+                    <p className="text-gray-500">No performance data available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -255,20 +295,26 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3">
-                  {filteredSuppliers
-                    .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
-                    .slice(0, 5)
-                    .map((supplier) => (
-                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.name}</p>
-                          <p className="text-sm text-gray-600">{supplier.industry}</p>
-                        </div>
-                        <div className="font-bold text-xl text-green-600">{supplier.totalScore}%</div>
-                      </li>
-                    ))}
-                </ul>
+                {filteredSuppliers.length > 0 ? (
+                  <ul className="space-y-3">
+                    {filteredSuppliers
+                      .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
+                      .slice(0, 5)
+                      .map((supplier) => (
+                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{supplier.name}</p>
+                            <p className="text-sm text-gray-600">{supplier.industry}</p>
+                          </div>
+                          <div className="font-bold text-xl text-green-600">{supplier.totalScore}%</div>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No suppliers to display</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -314,7 +360,7 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                           backdropFilter: 'blur(20px)'
                         }}
                         formatter={(value, name) => [
-                          `${value} suppliers (${((value as number) / filteredSuppliers.length * 100).toFixed(1)}%)`,
+                          `${value} suppliers (${filteredSuppliers.length > 0 ? ((value as number) / filteredSuppliers.length * 100).toFixed(1) : 0}%)`,
                           'Count'
                         ]}
                       />
@@ -361,21 +407,27 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3">
-                  {filteredSuppliers
-                    .filter(s => s.totalScore < 50)
-                    .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
-                    .slice(0, 5)
-                    .map((supplier) => (
-                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.name}</p>
-                          <p className="text-sm text-gray-600">{supplier.industry}</p>
-                        </div>
-                        <div className="font-bold text-xl text-red-600">{supplier.totalScore}%</div>
-                      </li>
-                    ))}
-                </ul>
+                {filteredSuppliers.length > 0 ? (
+                  <ul className="space-y-3">
+                    {filteredSuppliers
+                      .filter(s => s.totalScore < 50)
+                      .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
+                      .slice(0, 5)
+                      .map((supplier) => (
+                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{supplier.name}</p>
+                            <p className="text-sm text-gray-600">{supplier.industry}</p>
+                          </div>
+                          <div className="font-bold text-xl text-red-600">{supplier.totalScore}%</div>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No high-risk suppliers found</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -421,7 +473,7 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                           backdropFilter: 'blur(20px)'
                         }}
                         formatter={(value, name) => [
-                          `${value} suppliers (${((value as number) / filteredSuppliers.length * 100).toFixed(1)}%)`,
+                          `${value} suppliers (${filteredSuppliers.length > 0 ? ((value as number) / filteredSuppliers.length * 100).toFixed(1) : 0}%)`,
                           'Count'
                         ]}
                       />
@@ -468,21 +520,27 @@ export const AdvancedAnalytics = ({ suppliers }: AdvancedAnalyticsProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3">
-                  {filteredSuppliers
-                    .filter(s => s.totalScore <= 60)
-                    .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
-                    .slice(0, 5)
-                    .map((supplier) => (
-                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">{supplier.name}</p>
-                          <p className="text-sm text-gray-600">{supplier.industry}</p>
-                        </div>
-                        <div className="font-bold text-xl text-gray-500">{supplier.totalScore}%</div>
-                      </li>
-                    ))}
-                </ul>
+                {filteredSuppliers.length > 0 ? (
+                  <ul className="space-y-3">
+                    {filteredSuppliers
+                      .filter(s => s.totalScore <= 60)
+                      .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
+                      .slice(0, 5)
+                      .map((supplier) => (
+                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{supplier.name}</p>
+                            <p className="text-sm text-gray-600">{supplier.industry}</p>
+                          </div>
+                          <div className="font-bold text-xl text-gray-500">{supplier.totalScore}%</div>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No non-compliant suppliers found</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
