@@ -1,13 +1,45 @@
 
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
 import { DEFAULT_CRITERIA, SCORING_SCALE } from "@/types/supplier";
 import { mockSuppliers, mockScores } from "@/data/mockData";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Search, SortAsc, SortDesc, Filter, Eye, EyeOff, Medal, Crown, Award, Star } from "lucide-react";
+
+interface SortConfig {
+  key: string;
+  direction: 'asc' | 'desc';
+}
+
+interface FilterConfig {
+  searchTerm: string;
+  scoreRange: [number, number];
+  selectedCriteria: string[];
+  industryFilter: string;
+  statusFilter: string;
+  rankingTier: string;
+}
 
 export const EvaluationMatrix = () => {
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'totalScore', direction: 'desc' });
+  const [showFilters, setShowFilters] = useState(false);
+  const [visibleCriteria, setVisibleCriteria] = useState<string[]>(DEFAULT_CRITERIA.map(c => c.id));
+  const [filters, setFilters] = useState<FilterConfig>({
+    searchTerm: '',
+    scoreRange: [0, 100],
+    selectedCriteria: DEFAULT_CRITERIA.map(c => c.id),
+    industryFilter: 'all',
+    statusFilter: 'active',
+    rankingTier: 'all'
+  });
+
   const calculateSupplierScore = (supplierId: string) => {
     const supplierScores = mockScores.filter(score => score.supplierId === supplierId);
     let totalWeightedScore = 0;
@@ -24,20 +56,62 @@ export const EvaluationMatrix = () => {
     return totalWeight > 0 ? totalWeightedScore : 0;
   };
 
-  const suppliersWithScores = mockSuppliers
-    .filter(supplier => supplier.status === 'active')
-    .map(supplier => ({
-      ...supplier,
-      totalScore: calculateSupplierScore(supplier.id)
-    }))
-    .sort((a, b) => b.totalScore - a.totalScore);
+  const suppliersWithScores = useMemo(() => {
+    return mockSuppliers
+      .filter(supplier => supplier.status === filters.statusFilter || filters.statusFilter === 'all')
+      .map(supplier => ({
+        ...supplier,
+        totalScore: calculateSupplierScore(supplier.id)
+      }))
+      .filter(supplier => {
+        const matchesSearch = supplier.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                             supplier.industry.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        const matchesScoreRange = supplier.totalScore >= filters.scoreRange[0] && supplier.totalScore <= filters.scoreRange[1];
+        const matchesIndustry = filters.industryFilter === 'all' || supplier.industry === filters.industryFilter;
+        
+        return matchesSearch && matchesScoreRange && matchesIndustry;
+      })
+      .sort((a, b) => {
+        if (sortConfig.key === 'totalScore') {
+          return sortConfig.direction === 'desc' ? b.totalScore - a.totalScore : a.totalScore - b.totalScore;
+        }
+        if (sortConfig.key === 'name') {
+          return sortConfig.direction === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+        }
+        if (sortConfig.key === 'industry') {
+          return sortConfig.direction === 'desc' ? b.industry.localeCompare(a.industry) : a.industry.localeCompare(b.industry);
+        }
+        
+        // Handle criteria-specific sorting
+        const criteriaA = mockScores.find(s => s.supplierId === a.id && s.criteriaId === sortConfig.key)?.score || 0;
+        const criteriaB = mockScores.find(s => s.supplierId === b.id && s.criteriaId === sortConfig.key)?.score || 0;
+        return sortConfig.direction === 'desc' ? criteriaB - criteriaA : criteriaA - criteriaB;
+      })
+      .filter(supplier => {
+        if (filters.rankingTier === 'all') return true;
+        const rank = suppliersWithScores.indexOf(supplier) + 1;
+        if (filters.rankingTier === 'top3') return rank <= 3;
+        if (filters.rankingTier === 'top10') return rank <= 10;
+        if (filters.rankingTier === 'bottom') return rank > suppliersWithScores.length * 0.8;
+        return true;
+      });
+  }, [filters, sortConfig]);
 
-  const getRankBadge = (index: number) => {
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const getRankBadge = (index: number, totalScore: number) => {
     const rank = index + 1;
-    if (rank === 1) return <Badge className="bg-yellow-500 text-white text-xs">🥇 1st</Badge>;
-    if (rank === 2) return <Badge className="bg-gray-400 text-white text-xs">🥈 2nd</Badge>;
-    if (rank === 3) return <Badge className="bg-orange-600 text-white text-xs">🥉 3rd</Badge>;
-    return <Badge variant="outline" className="text-xs">{rank}th</Badge>;
+    if (rank === 1) return <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold shadow-lg"><Crown className="w-3 h-3 mr-1" />1st</Badge>;
+    if (rank === 2) return <Badge className="bg-gradient-to-r from-gray-300 to-gray-500 text-white text-xs font-bold shadow-lg"><Medal className="w-3 h-3 mr-1" />2nd</Badge>;
+    if (rank === 3) return <Badge className="bg-gradient-to-r from-orange-400 to-orange-600 text-white text-xs font-bold shadow-lg"><Award className="w-3 h-3 mr-1" />3rd</Badge>;
+    if (rank <= 5) return <Badge className="bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs"><Star className="w-3 h-3 mr-1" />Top 5</Badge>;
+    if (rank <= 10) return <Badge className="bg-blue-100 text-blue-800 text-xs">Top 10</Badge>;
+    return <Badge variant="outline" className="text-xs">#{rank}</Badge>;
   };
 
   const getScoreColor = (score: number) => {
@@ -57,15 +131,15 @@ export const EvaluationMatrix = () => {
     
     const [key, scale] = scaleEntry;
     const colorMap = {
-      EXCELLENT: "bg-green-100 text-green-800",
-      GOOD: "bg-blue-100 text-blue-800", 
-      SATISFACTORY: "bg-yellow-100 text-yellow-800",
-      NEEDS_IMPROVEMENT: "bg-orange-100 text-orange-800",
-      UNACCEPTABLE: "bg-red-100 text-red-800"
+      EXCELLENT: "bg-green-100 text-green-800 border-green-200",
+      GOOD: "bg-blue-100 text-blue-800 border-blue-200", 
+      SATISFACTORY: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      NEEDS_IMPROVEMENT: "bg-orange-100 text-orange-800 border-orange-200",
+      UNACCEPTABLE: "bg-red-100 text-red-800 border-red-200"
     };
     
     return (
-      <Badge className={`${colorMap[key as keyof typeof colorMap] || "bg-gray-100 text-gray-800"} text-xs`}>
+      <Badge className={`${colorMap[key as keyof typeof colorMap] || "bg-gray-100 text-gray-800"} text-xs border`}>
         {scale.label}
       </Badge>
     );
@@ -77,40 +151,206 @@ export const EvaluationMatrix = () => {
     return <TrendingDown className="w-4 h-4 text-red-600" />;
   };
 
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'desc' ? 
+        <SortDesc className="w-4 h-4 ml-1" /> : 
+        <SortAsc className="w-4 h-4 ml-1" />;
+    }
+    return null;
+  };
+
+  const uniqueIndustries = Array.from(new Set(mockSuppliers.map(s => s.industry)));
+
+  const handleTiedScores = (suppliers: typeof suppliersWithScores) => {
+    const groupedByScore = suppliers.reduce((acc, supplier, index) => {
+      const scoreKey = supplier.totalScore.toFixed(1);
+      if (!acc[scoreKey]) acc[scoreKey] = [];
+      acc[scoreKey].push({ ...supplier, originalIndex: index });
+      return acc;
+    }, {} as Record<string, Array<typeof supplier & { originalIndex: number }>>);
+
+    return Object.values(groupedByScore).some(group => group.length > 1);
+  };
+
+  const hasTiedScores = handleTiedScores(suppliersWithScores);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-blue-900">Supplier Evaluation Matrix</CardTitle>
-        <p className="text-gray-600">Comprehensive performance ranking based on weighted criteria</p>
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-2">
-          <span>Total Suppliers Evaluated: {suppliersWithScores.length}</span>
-          <span>•</span>
-          <span>Criteria: {DEFAULT_CRITERIA.length}</span>
+    <Card className="frosted-glass border-0 overflow-hidden">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <CardTitle className="text-xl font-bold gradient-text">Advanced Supplier Comparison Matrix</CardTitle>
+            <p className="text-gray-600 mt-1">Comprehensive performance analysis with advanced filtering and sorting</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="frosted-glass border-0 hover-glow"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </Button>
+            <Badge className="bg-blue-100 text-blue-800 text-xs">
+              {suppliersWithScores.length} suppliers shown
+            </Badge>
+            {hasTiedScores && (
+              <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                Tied scores detected
+              </Badge>
+            )}
+          </div>
         </div>
+
+        {showFilters && (
+          <div className="glass-card p-4 rounded-xl mt-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Search Suppliers</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by name or industry..."
+                    value={filters.searchTerm}
+                    onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                    className="glass-input border-0 pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Industry Filter</label>
+                <Select value={filters.industryFilter} onValueChange={(value) => setFilters(prev => ({ ...prev, industryFilter: value }))}>
+                  <SelectTrigger className="glass-input border-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="glass-card border-0">
+                    <SelectItem value="all">All Industries</SelectItem>
+                    {uniqueIndustries.map(industry => (
+                      <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Ranking Tier</label>
+                <Select value={filters.rankingTier} onValueChange={(value) => setFilters(prev => ({ ...prev, rankingTier: value }))}>
+                  <SelectTrigger className="glass-input border-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="glass-card border-0">
+                    <SelectItem value="all">All Suppliers</SelectItem>
+                    <SelectItem value="top3">Top 3 Performers</SelectItem>
+                    <SelectItem value="top10">Top 10 Performers</SelectItem>
+                    <SelectItem value="bottom">Bottom 20%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Score Range: {filters.scoreRange[0]} - {filters.scoreRange[1]}
+              </label>
+              <Slider
+                value={filters.scoreRange}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, scoreRange: value as [number, number] }))}
+                max={100}
+                min={0}
+                step={5}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Visible Criteria</label>
+              <div className="flex flex-wrap gap-2">
+                {DEFAULT_CRITERIA.map(criteria => (
+                  <div key={criteria.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={criteria.id}
+                      checked={visibleCriteria.includes(criteria.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setVisibleCriteria(prev => [...prev, criteria.id]);
+                        } else {
+                          setVisibleCriteria(prev => prev.filter(id => id !== criteria.id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={criteria.id} className="text-sm text-gray-600 cursor-pointer">
+                      {criteria.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+          <div className="min-w-[1200px]">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 text-center">Rank</TableHead>
-                  <TableHead className="min-w-[200px]">Supplier</TableHead>
-                  <TableHead className="text-center min-w-[120px]">Overall Score</TableHead>
-                  <TableHead className="text-center min-w-[100px]">Quality (25%)</TableHead>
-                  <TableHead className="text-center min-w-[100px]">Cost (20%)</TableHead>
-                  <TableHead className="text-center min-w-[100px]">Lead Time (20%)</TableHead>
-                  <TableHead className="text-center min-w-[100px]">Reliability (20%)</TableHead>
-                  <TableHead className="text-center min-w-[120px]">Sustainability (15%)</TableHead>
+                <TableRow className="border-gray-200/50">
+                  <TableHead className="w-16 text-center sticky left-0 bg-white/80 backdrop-blur-sm z-10">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('rank')}
+                      className="text-xs font-medium"
+                    >
+                      Rank {getSortIcon('rank')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="min-w-[200px] sticky left-16 bg-white/80 backdrop-blur-sm z-10">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('name')}
+                      className="text-sm font-medium"
+                    >
+                      Supplier {getSortIcon('name')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-center min-w-[140px]">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSort('totalScore')}
+                      className="text-sm font-medium"
+                    >
+                      Overall Score {getSortIcon('totalScore')}
+                    </Button>
+                  </TableHead>
+                  {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => (
+                    <TableHead key={criteria.id} className="text-center min-w-[120px]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort(criteria.id)}
+                        className="text-sm font-medium"
+                      >
+                        {criteria.name} ({criteria.weight}%) {getSortIcon(criteria.id)}
+                      </Button>
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {suppliersWithScores.map((supplier, index) => {
                   const supplierScores = mockScores.filter(score => score.supplierId === supplier.id);
                   return (
-                    <TableRow key={supplier.id} className="hover:bg-gray-50">
-                      <TableCell className="text-center">{getRankBadge(index)}</TableCell>
-                      <TableCell>
+                    <TableRow key={supplier.id} className="hover:bg-gray-50/50 border-gray-200/30">
+                      <TableCell className="text-center sticky left-0 bg-white/80 backdrop-blur-sm">
+                        {getRankBadge(index, supplier.totalScore)}
+                      </TableCell>
+                      <TableCell className="sticky left-16 bg-white/80 backdrop-blur-sm">
                         <div className="space-y-1 min-w-0">
                           <div className="font-semibold text-blue-900 flex items-center gap-2">
                             <span className="truncate">{supplier.name}</span>
@@ -129,7 +369,7 @@ export const EvaluationMatrix = () => {
                           {getScoreBadge(supplier.totalScore)}
                         </div>
                       </TableCell>
-                      {DEFAULT_CRITERIA.map(criteria => {
+                      {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => {
                         const score = supplierScores.find(s => s.criteriaId === criteria.id);
                         const scoreValue = score?.score || 0;
                         return (
@@ -156,26 +396,35 @@ export const EvaluationMatrix = () => {
           </div>
         </div>
         
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-semibold text-blue-900 mb-2">Evaluation Summary</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-            <div className="break-words">
-              <span className="font-medium">Top Performer:</span>
-              <span className="ml-2 text-blue-700">
+        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg mx-6 mb-6">
+          <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Performance Analytics Summary
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="glass-card p-3 rounded-lg">
+              <span className="font-medium text-gray-700">Top Performer:</span>
+              <div className="mt-1 text-blue-700 font-semibold">
                 {suppliersWithScores[0]?.name} ({suppliersWithScores[0]?.totalScore.toFixed(1)})
-              </span>
+              </div>
             </div>
-            <div>
-              <span className="font-medium">Average Score:</span>
-              <span className="ml-2 text-blue-700">
+            <div className="glass-card p-3 rounded-lg">
+              <span className="font-medium text-gray-700">Average Score:</span>
+              <div className="mt-1 text-blue-700 font-semibold">
                 {(suppliersWithScores.reduce((sum, s) => sum + s.totalScore, 0) / suppliersWithScores.length).toFixed(1)}
-              </span>
+              </div>
             </div>
-            <div>
-              <span className="font-medium">Evaluation Date:</span>
-              <span className="ml-2 text-blue-700">
+            <div className="glass-card p-3 rounded-lg">
+              <span className="font-medium text-gray-700">Score Range:</span>
+              <div className="mt-1 text-blue-700 font-semibold">
+                {Math.min(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)} - {Math.max(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)}
+              </div>
+            </div>
+            <div className="glass-card p-3 rounded-lg">
+              <span className="font-medium text-gray-700">Last Updated:</span>
+              <div className="mt-1 text-blue-700 font-semibold">
                 {new Date().toLocaleDateString()}
-              </span>
+              </div>
             </div>
           </div>
         </div>
