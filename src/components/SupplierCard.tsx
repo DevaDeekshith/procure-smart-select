@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { EditSupplierForm } from "./EditSupplierForm";
 import { Supplier } from "@/types/supplier";
 import { MoreVertical, Edit, Trash2, Building2, MapPin, Calendar, Star, Award } from "lucide-react";
@@ -29,12 +30,6 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
-
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return 'text-green-600';
-    if (rating >= 3.5) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   return (
@@ -107,34 +102,24 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
             
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{supplier.location}</span>
+              <span className="truncate">{supplier.address || 'Address not provided'}</span>
             </div>
             
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span>Since {new Date(supplier.createdAt).getFullYear()}</span>
+              <span>Since {supplier.establishedYear || new Date(supplier.createdAt).getFullYear()}</span>
             </div>
           </div>
 
           <div className="glass-card p-4 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Overall Rating</span>
-              <div className="flex items-center gap-1">
-                <Star className={`w-4 h-4 fill-current ${getRatingColor(supplier.overallRating || 0)}`} />
-                <span className={`text-sm font-bold ${getRatingColor(supplier.overallRating || 0)}`}>
-                  {supplier.overallRating?.toFixed(1) || 'N/A'}
-                </span>
-              </div>
+              <span className="text-sm font-medium text-gray-700">Contact</span>
+              <span className="text-sm text-gray-600">{supplier.contactPerson}</span>
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Performance</span>
-              <div className="flex items-center gap-1">
-                <Award className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-600">
-                  {supplier.performanceScore ? `${supplier.performanceScore}%` : 'Pending'}
-                </span>
-              </div>
+              <span className="text-sm font-medium text-gray-700">Email</span>
+              <span className="text-sm text-gray-600 truncate">{supplier.email}</span>
             </div>
           </div>
 
@@ -144,15 +129,16 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
         </CardContent>
       </Card>
 
-      <EditSupplierForm
-        supplier={supplier}
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        onSubmit={(updatedSupplier) => {
-          onEdit(updatedSupplier);
-          setIsEditDialogOpen(false);
-        }}
-      />
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <EditSupplierForm
+          supplier={supplier}
+          onSubmit={(updatedSupplier) => {
+            onEdit(updatedSupplier);
+            setIsEditDialogOpen(false);
+          }}
+          onCancel={() => setIsEditDialogOpen(false)}
+        />
+      </Dialog>
     </>
   );
 };
