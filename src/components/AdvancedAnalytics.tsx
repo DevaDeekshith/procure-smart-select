@@ -17,11 +17,14 @@ import {
   Calendar, Filter, Download, Eye, BarChart3, PieChart as PieChartIcon,
   Users, Clock, Star, AlertCircle, CheckCircle, ArrowUpRight
 } from "lucide-react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export const AdvancedAnalytics = () => {
   const [timeRange, setTimeRange] = useState("6months");
   const [selectedMetric, setSelectedMetric] = useState("overall");
   const [reportType, setReportType] = useState("performance");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Calculate comprehensive metrics
   const calculateSupplierScore = (supplierId: string) => {
@@ -48,8 +51,63 @@ export const AdvancedAnalytics = () => {
     }))
     .sort((a, b) => b.totalScore - a.totalScore);
 
-  // Advanced metrics calculations
-  const metrics = {
+  // Enhanced export functionality
+  const handleExportReport = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const element = document.getElementById('analytics-dashboard');
+      
+      if (element) {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Add title page
+        pdf.setFontSize(20);
+        pdf.text('Supplier Analytics Report', 20, 30);
+        pdf.setFontSize(12);
+        pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
+        pdf.text(`Time Range: ${timeRange}`, 20, 50);
+        
+        // Add summary stats
+        const metrics = calculateMetrics();
+        pdf.text(`Total Suppliers: ${metrics.totalSuppliers}`, 20, 70);
+        pdf.text(`Average Score: ${metrics.avgScore.toFixed(1)}`, 20, 80);
+        pdf.text(`Top Performers: ${metrics.topPerformers}`, 20, 90);
+        pdf.text(`Risk Suppliers: ${metrics.riskSuppliers}`, 20, 100);
+
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save(`supplier-analytics-report-${new Date().getTime()}.pdf`);
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Calculate metrics
+  const calculateMetrics = () => ({
     totalSuppliers: suppliersWithScores.length,
     avgScore: suppliersWithScores.reduce((sum, s) => sum + s.totalScore, 0) / suppliersWithScores.length,
     topPerformers: suppliersWithScores.filter(s => s.totalScore >= 90).length,
@@ -62,7 +120,9 @@ export const AdvancedAnalytics = () => {
     industryDiversity: new Set(suppliersWithScores.map(s => s.industry)).size,
     evaluationCompletion: (mockScores.length / (suppliersWithScores.length * DEFAULT_CRITERIA.length)) * 100,
     riskSuppliers: suppliersWithScores.filter(s => s.totalScore < 70).length
-  };
+  });
+
+  const metrics = calculateMetrics();
 
   // Performance distribution data
   const performanceDistribution = Object.entries(SCORING_SCALE).map(([key, scale]) => {
@@ -71,24 +131,24 @@ export const AdvancedAnalytics = () => {
     ).length;
     
     return {
-      label: scale.label,
+      name: scale.label,
       count: count,
       percentage: suppliersWithScores.length > 0 ? (count / suppliersWithScores.length) * 100 : 0,
-      color: key === 'EXCELLENT' ? '#10B981' : 
-             key === 'GOOD' ? '#3B82F6' :
-             key === 'SATISFACTORY' ? '#F59E0B' :
-             key === 'NEEDS_IMPROVEMENT' ? '#EF4444' : '#8B5CF6'
+      fill: key === 'EXCELLENT' ? '#10B981' : 
+            key === 'GOOD' ? '#3B82F6' :
+            key === 'SATISFACTORY' ? '#F59E0B' :
+            key === 'NEEDS_IMPROVEMENT' ? '#EF4444' : '#8B5CF6'
     };
   });
 
-  // Criteria performance trends
+  // Criteria performance data
   const criteriaPerformance = DEFAULT_CRITERIA.map(criteria => {
     const scores = mockScores
       .filter(score => score.criteriaId === criteria.id)
       .map(score => score.score);
     
     const average = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
-    const trend = Math.random() > 0.5 ? 'up' : 'down'; // Simulated trend
+    const trend = Math.random() > 0.5 ? 'up' : 'down';
     const change = (Math.random() * 10 - 5).toFixed(1);
     
     return {
@@ -116,7 +176,7 @@ export const AdvancedAnalytics = () => {
     };
   }).sort((a, b) => b.avgScore - a.avgScore);
 
-  // Time series data (simulated)
+  // Time series data
   const timeSeriesData = Array.from({ length: 12 }, (_, i) => ({
     month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
     avgScore: 75 + Math.sin(i / 2) * 10 + Math.random() * 5,
@@ -124,10 +184,29 @@ export const AdvancedAnalytics = () => {
     newSuppliers: Math.floor(Math.random() * 5) + 1
   }));
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
-    <div className="space-y-6">
+    <div id="analytics-dashboard" className="space-y-6">
       {/* Header with Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
@@ -146,14 +225,19 @@ export const AdvancedAnalytics = () => {
               <SelectItem value="all">All Time</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportReport}
+            disabled={isExporting}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Export Report
+            {isExporting ? 'Exporting...' : 'Export Report'}
           </Button>
         </div>
       </div>
 
-      {/* Enhanced Summary Statistics - Moved to top */}
+      {/* Enhanced Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-4">
@@ -259,13 +343,13 @@ export const AdvancedAnalytics = () => {
         </Card>
       </div>
 
-      {/* Advanced Analytics Tabs */}
+      {/* Enhanced Analytics Tabs with better styling */}
       <Tabs defaultValue="performance" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="performance">Performance Trends</TabsTrigger>
-          <TabsTrigger value="criteria">Criteria Analysis</TabsTrigger>
-          <TabsTrigger value="industry">Industry Insights</TabsTrigger>
-          <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 h-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-1">
+          <TabsTrigger value="performance" className="rounded-lg font-medium">Performance Trends</TabsTrigger>
+          <TabsTrigger value="criteria" className="rounded-lg font-medium">Criteria Analysis</TabsTrigger>
+          <TabsTrigger value="industry" className="rounded-lg font-medium">Industry Insights</TabsTrigger>
+          <TabsTrigger value="risk" className="rounded-lg font-medium">Risk Assessment</TabsTrigger>
         </TabsList>
 
         <TabsContent value="performance" className="space-y-6">
@@ -282,7 +366,7 @@ export const AdvancedAnalytics = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="avgScore" stroke="#3B82F6" strokeWidth={2} />
+                    <Line type="monotone" dataKey="avgScore" stroke="#3B82F6" strokeWidth={3} />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -300,16 +384,17 @@ export const AdvancedAnalytics = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percentage }) => `${name}: ${percentage.toFixed(0)}%`}
-                      outerRadius={80}
+                      label={renderCustomizedLabel}
+                      outerRadius={100}
                       fill="#8884d8"
                       dataKey="count"
                     >
                       {performanceDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value, name) => [value, name]} />
+                    <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -337,14 +422,50 @@ export const AdvancedAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="criteria" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Criteria Performance Radar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={criteriaPerformance}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                    <Radar name="Average Score" dataKey="average" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} strokeWidth={2} />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Criteria Weight vs Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ScatterChart data={criteriaPerformance}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="weight" name="Weight %" />
+                    <YAxis dataKey="average" name="Average Score" />
+                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                    <Scatter dataKey="average" fill="#8884d8" />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Criteria Performance Analysis</CardTitle>
+              <CardTitle>Detailed Criteria Performance</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {criteriaPerformance.map((criteria) => (
-                  <div key={criteria.name} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={criteria.name} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <h4 className="font-medium">{criteria.name}</h4>
@@ -375,22 +496,51 @@ export const AdvancedAnalytics = () => {
         </TabsContent>
 
         <TabsContent value="industry" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Industry Performance Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={industryAnalysis} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="industry" type="category" width={100} />
-                  <Tooltip />
-                  <Bar dataKey="avgScore" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Industry Performance Comparison</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={industryAnalysis} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="industry" type="category" width={100} />
+                    <Tooltip />
+                    <Bar dataKey="avgScore" fill="#3B82F6" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Industry Supplier Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Pie
+                      data={industryAnalysis}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ industry, count }) => `${industry}: ${count}`}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {industryAnalysis.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {industryAnalysis.map((industry) => (
@@ -424,11 +574,11 @@ export const AdvancedAnalytics = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <ScatterChart data={suppliersWithScores}>
-                    <CartesianGrid />
+                    <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="totalScore" name="Performance Score" />
                     <YAxis dataKey="establishedYear" name="Years Established" />
                     <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter dataKey="totalScore" fill="#8884d8" />
+                    <Scatter dataKey="totalScore" fill="#ef4444" />
                   </ScatterChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -436,29 +586,56 @@ export const AdvancedAnalytics = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>High-Risk Suppliers</CardTitle>
+                <CardTitle>Risk Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {suppliersWithScores
-                    .filter(s => s.totalScore < 70)
-                    .slice(0, 5)
-                    .map((supplier) => (
-                      <div key={supplier.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
-                        <div>
-                          <h4 className="font-medium">{supplier.name}</h4>
-                          <p className="text-sm text-gray-600">{supplier.industry}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-semibold text-red-600">{supplier.totalScore.toFixed(1)}</div>
-                          <Badge variant="destructive">High Risk</Badge>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'High Risk', value: suppliersWithScores.filter(s => s.totalScore < 60).length, fill: '#ef4444' },
+                        { name: 'Medium Risk', value: suppliersWithScores.filter(s => s.totalScore >= 60 && s.totalScore < 75).length, fill: '#f59e0b' },
+                        { name: 'Low Risk', value: suppliersWithScores.filter(s => s.totalScore >= 75).length, fill: '#10b981' }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
+                      outerRadius={100}
+                      dataKey="value"
+                    />
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>High-Risk Suppliers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {suppliersWithScores
+                  .filter(s => s.totalScore < 70)
+                  .slice(0, 5)
+                  .map((supplier) => (
+                    <div key={supplier.id} className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
+                      <div>
+                        <h4 className="font-medium">{supplier.name}</h4>
+                        <p className="text-sm text-gray-600">{supplier.industry}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-red-600">{supplier.totalScore.toFixed(1)}</div>
+                        <Badge variant="destructive">High Risk</Badge>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

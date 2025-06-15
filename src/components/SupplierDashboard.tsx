@@ -1,7 +1,7 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { SupplierCard } from "./SupplierCard";
@@ -10,9 +10,10 @@ import { EvaluationAnalytics } from "./EvaluationAnalytics";
 import { SupplierScoring } from "./SupplierScoring";
 import { CriteriaWeights } from "./CriteriaWeights";
 import { AddSupplierForm } from "./AddSupplierForm";
+import { AdvancedSearch } from "./AdvancedSearch";
 import { mockSuppliers } from "@/data/mockData";
 import { Supplier, SupplierScore } from "@/types/supplier";
-import { Search, Plus, Filter, Users, Star, TrendingUp, Calculator, BarChart3, Crown, Sparkles } from "lucide-react";
+import { Plus, Filter, Users, Star, TrendingUp, BarChart3, Crown, Sparkles } from "lucide-react";
 
 export const SupplierDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,7 +25,8 @@ export const SupplierDashboard = () => {
 
   const filteredSuppliers = suppliers.filter(supplier => {
     const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.industry.toLowerCase().includes(searchTerm.toLowerCase());
+                         supplier.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         supplier.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || supplier.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -67,6 +69,12 @@ export const SupplierDashboard = () => {
       setSelectedSupplierForScoring(supplier);
       setView("scoring");
     }
+  };
+
+  const handleSupplierSelect = (supplier: Supplier) => {
+    // Focus on the selected supplier
+    console.log('Selected supplier:', supplier);
+    // You can add additional logic here if needed
   };
 
   if (selectedSupplierForScoring && view === "scoring") {
@@ -175,19 +183,16 @@ export const SupplierDashboard = () => {
           </Card>
         </div>
 
-        {/* Controls with Glass Design */}
+        {/* Enhanced Controls with Glass Design */}
         <div className="glass-card p-6 rounded-2xl">
           <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
             <div className="flex flex-col sm:flex-row flex-1 gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  placeholder="Search suppliers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="glass-input border-0 pl-12 h-12 rounded-2xl text-base"
-                />
-              </div>
+              <AdvancedSearch
+                suppliers={suppliers}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onSupplierSelect={handleSupplierSelect}
+              />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="glass-input border-0 w-full sm:w-48 h-12 rounded-2xl">
                   <Filter className="w-4 h-4 mr-2" />
