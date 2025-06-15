@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,13 +161,13 @@ export const EvaluationMatrix = () => {
 
   const uniqueIndustries = Array.from(new Set(mockSuppliers.map(s => s.industry)));
 
-  const handleTiedScores = (suppliers: typeof suppliersWithScores) => {
-    const groupedByScore = suppliers.reduce((acc, supplier, index) => {
-      const scoreKey = supplier.totalScore.toFixed(1);
+  const handleTiedScores = (suppliers: Array<{ id: string; name: string; totalScore: number }>) => {
+    const groupedByScore = suppliers.reduce((acc, supplierItem, index) => {
+      const scoreKey = supplierItem.totalScore.toFixed(1);
       if (!acc[scoreKey]) acc[scoreKey] = [];
-      acc[scoreKey].push({ ...supplier, originalIndex: index });
+      acc[scoreKey].push({ ...supplierItem, originalIndex: index });
       return acc;
-    }, {} as Record<string, Array<typeof supplier & { originalIndex: number }>>);
+    }, {} as Record<string, Array<{ id: string; name: string; totalScore: number; originalIndex: number }>>);
 
     return Object.values(groupedByScore).some(group => group.length > 1);
   };
