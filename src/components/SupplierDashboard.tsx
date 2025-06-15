@@ -42,6 +42,18 @@ export const SupplierDashboard = () => {
     setIsAddDialogOpen(false);
   };
 
+  const handleEditSupplier = (updatedSupplier: Supplier) => {
+    setSuppliers(prev => 
+      prev.map(supplier => 
+        supplier.id === updatedSupplier.id ? updatedSupplier : supplier
+      )
+    );
+  };
+
+  const handleDeleteSupplier = (supplierId: string) => {
+    setSuppliers(prev => prev.filter(supplier => supplier.id !== supplierId));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,6 +163,8 @@ export const SupplierDashboard = () => {
                 <SupplierCard
                   key={supplier.id}
                   supplier={supplier}
+                  onEdit={handleEditSupplier}
+                  onDelete={handleDeleteSupplier}
                   onClick={() => console.log(`Selected supplier: ${supplier.name}`)}
                 />
               ))}
