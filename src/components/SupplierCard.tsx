@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { SupplierDetailView } from "./SupplierDetailView";
 import { Supplier } from "@/types/supplier";
-import { Building2, Mail, Phone, Calendar, Award, Eye, Edit, Trash2 } from "lucide-react";
+import { Building2, Mail, Phone, Calendar, Award, Eye, Trash2 } from "lucide-react";
 
 interface SupplierCardProps {
   supplier: Supplier;
@@ -28,7 +28,6 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger card click if clicking on action buttons
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
@@ -52,14 +51,14 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={handleCardClick}>
+    <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer group border border-gray-200" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-blue-900">{supplier.name}</CardTitle>
-            <p className="text-sm text-gray-600">{supplier.industry}</p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg font-semibold text-blue-900 truncate">{supplier.name}</CardTitle>
+            <p className="text-sm text-gray-600 truncate">{supplier.industry}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex-shrink-0">
             <Badge className={getStatusColor(supplier.status)}>
               {supplier.status.toUpperCase()}
             </Badge>
@@ -67,34 +66,37 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center text-sm text-gray-600">
-          <Building2 className="w-4 h-4 mr-2" />
-          {supplier.contactPerson}
+        <div className="space-y-2">
+          <div className="flex items-center text-sm text-gray-600">
+            <Building2 className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{supplier.contactPerson}</span>
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{supplier.email}</span>
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{supplier.phone}</span>
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span>Est. {supplier.establishedYear}</span>
+          </div>
         </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Mail className="w-4 h-4 mr-2" />
-          {supplier.email}
-        </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Phone className="w-4 h-4 mr-2" />
-          {supplier.phone}
-        </div>
-        <div className="flex items-center text-sm text-gray-600">
-          <Calendar className="w-4 h-4 mr-2" />
-          Est. {supplier.establishedYear}
-        </div>
+        
         {supplier.certifications.length > 0 && (
           <div className="flex items-start text-sm text-gray-600">
-            <Award className="w-4 h-4 mr-2 mt-0.5" />
-            <div className="flex flex-wrap gap-1">
-              {supplier.certifications.slice(0, 3).map((cert, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+            <Award className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+            <div className="flex flex-wrap gap-1 min-w-0">
+              {supplier.certifications.slice(0, 2).map((cert, index) => (
+                <Badge key={index} variant="outline" className="text-xs truncate max-w-[120px]">
                   {cert}
                 </Badge>
               ))}
-              {supplier.certifications.length > 3 && (
+              {supplier.certifications.length > 2 && (
                 <Badge variant="outline" className="text-xs">
-                  +{supplier.certifications.length - 3} more
+                  +{supplier.certifications.length - 2} more
                 </Badge>
               )}
             </div>
@@ -102,12 +104,12 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
         )}
         
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button variant="outline" size="sm" className="flex-1 text-xs">
                 <Eye className="w-3 h-3 mr-1" />
-                View
+                <span className="hidden sm:inline">View</span>
               </Button>
             </SheetTrigger>
             <SupplierDetailView
@@ -125,7 +127,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                 onDelete(supplier.id);
               }
             }}
-            className="text-red-600 hover:text-red-700"
+            className="text-red-600 hover:text-red-700 px-2"
           >
             <Trash2 className="w-3 h-3" />
           </Button>
