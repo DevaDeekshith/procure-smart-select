@@ -11,6 +11,8 @@ import { SupplierScoring } from "./SupplierScoring";
 import { CriteriaWeights } from "./CriteriaWeights";
 import { AddSupplierForm } from "./AddSupplierForm";
 import { GlobalSearch } from "./GlobalSearch";
+import { VoiceAssistant } from "./VoiceAssistant";
+import { VoiceCommandProcessor } from "./VoiceCommandProcessor";
 import { mockSuppliers } from "@/data/mockData";
 import { Supplier, SupplierScore } from "@/types/supplier";
 import { Plus, Filter, Users, Star, TrendingUp, BarChart3, Crown, Sparkles, AlertCircle, Info } from "lucide-react";
@@ -105,6 +107,35 @@ export const SupplierDashboard = () => {
     setView('grid');
   };
 
+  // Voice command handlers
+  const handleVoiceCommand = (command: any) => {
+    console.log('Voice command received:', command);
+    // The VoiceCommandProcessor will handle the actual processing
+  };
+
+  const handleVoiceScoreSupplier = (supplierId: string, scoreData: any) => {
+    console.log('Voice scoring:', supplierId, scoreData);
+    // Handle voice-initiated scoring
+  };
+
+  const handleVoiceGenerateReport = (reportType: string) => {
+    console.log('Voice report generation:', reportType);
+    setView('analytics');
+  };
+
+  const handleVoiceNavigate = (viewName: string) => {
+    const viewMap: Record<string, typeof view> = {
+      'grid': 'grid',
+      'matrix': 'matrix',
+      'analytics': 'analytics',
+      'scoring': 'scoring'
+    };
+    
+    if (viewMap[viewName]) {
+      setView(viewMap[viewName]);
+    }
+  };
+
   if (selectedSupplierForScoring && view === "scoring") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
@@ -115,6 +146,16 @@ export const SupplierDashboard = () => {
             setSelectedSupplierForScoring(null);
             setView("grid");
           }}
+        />
+        <VoiceAssistant onCommand={handleVoiceCommand} />
+        <VoiceCommandProcessor
+          suppliers={suppliers}
+          onAddSupplier={handleAddSupplier}
+          onEditSupplier={handleEditSupplier}
+          onDeleteSupplier={handleDeleteSupplier}
+          onScoreSupplier={handleVoiceScoreSupplier}
+          onGenerateReport={handleVoiceGenerateReport}
+          onNavigate={handleVoiceNavigate}
         />
       </div>
     );
@@ -383,6 +424,20 @@ export const SupplierDashboard = () => {
             <EvaluationAnalytics suppliers={suppliers} />
           ) : null}
         </div>
+
+        {/* Voice Assistant - Always present */}
+        <VoiceAssistant onCommand={handleVoiceCommand} />
+        
+        {/* Voice Command Processor */}
+        <VoiceCommandProcessor
+          suppliers={suppliers}
+          onAddSupplier={handleAddSupplier}
+          onEditSupplier={handleEditSupplier}
+          onDeleteSupplier={handleDeleteSupplier}
+          onScoreSupplier={handleVoiceScoreSupplier}
+          onGenerateReport={handleVoiceGenerateReport}
+          onNavigate={handleVoiceNavigate}
+        />
       </div>
     </TooltipProvider>
   );
