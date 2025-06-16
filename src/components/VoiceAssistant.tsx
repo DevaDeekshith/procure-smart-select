@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,12 +30,12 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   ]);
 
   useEffect(() => {
-    // Check if Speech Recognition is supported
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // Check if Speech Recognition is supported with proper type casting
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (SpeechRecognition) {
       setIsSupported(true);
-      const recognitionInstance = new SpeechRecognition();
+      const recognitionInstance = new SpeechRecognition() as SpeechRecognition;
       
       // Configure speech recognition
       recognitionInstance.continuous = false;
