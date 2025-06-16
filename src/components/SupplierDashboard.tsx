@@ -11,7 +11,7 @@ import { SupplierScoring } from "./SupplierScoring";
 import { CriteriaWeights } from "./CriteriaWeights";
 import { AddSupplierForm } from "./AddSupplierForm";
 import { GlobalSearch } from "./GlobalSearch";
-import { VoiceAssistant } from "./VoiceAssistant";
+import { ElevenLabsWidget } from "./ElevenLabsWidget";
 import { VoiceCommandProcessor } from "./VoiceCommandProcessor";
 import { mockSuppliers } from "@/data/mockData";
 import { Supplier, SupplierScore } from "@/types/supplier";
@@ -34,6 +34,12 @@ export const SupplierDashboard = () => {
 
   const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
   const pendingSuppliers = suppliers.filter(s => s.status === 'pending').length;
+
+  // Calculate top performers for analytics
+  const topPerformers = suppliers
+    .filter(s => s.status === 'active')
+    .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
+    .slice(0, 5);
 
   const handleAddSupplier = (supplierData: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newSupplier: Supplier = {
@@ -95,7 +101,6 @@ export const SupplierDashboard = () => {
     }
   };
 
-  // Handle summary card clicks for filtering
   const handleSummaryCardClick = (filterType: string) => {
     if (filterType === 'total') {
       setStatusFilter('all');
@@ -107,15 +112,12 @@ export const SupplierDashboard = () => {
     setView('grid');
   };
 
-  // Voice command handlers
   const handleVoiceCommand = (command: any) => {
     console.log('Voice command received:', command);
-    // The VoiceCommandProcessor will handle the actual processing
   };
 
   const handleVoiceScoreSupplier = (supplierId: string, scoreData: any) => {
     console.log('Voice scoring:', supplierId, scoreData);
-    // Handle voice-initiated scoring
   };
 
   const handleVoiceGenerateReport = (reportType: string) => {
@@ -138,7 +140,7 @@ export const SupplierDashboard = () => {
 
   if (selectedSupplierForScoring && view === "scoring") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-100">
         <SupplierScoring
           supplier={selectedSupplierForScoring}
           onScoreSubmit={handleScoreSubmit}
@@ -147,7 +149,7 @@ export const SupplierDashboard = () => {
             setView("grid");
           }}
         />
-        <VoiceAssistant onCommand={handleVoiceCommand} />
+        <ElevenLabsWidget />
         <VoiceCommandProcessor
           suppliers={suppliers}
           onAddSupplier={handleAddSupplier}
@@ -163,8 +165,8 @@ export const SupplierDashboard = () => {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
-        <div className="space-y-8 p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-blue-100">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6 space-y-8">
           {/* Hero Header with Liquid Glass Effect */}
           <div className="text-center mb-12 relative">
             <div className="absolute inset-0 flex items-center justify-center">
@@ -365,37 +367,42 @@ export const SupplierDashboard = () => {
             </div>
           </div>
 
-          {/* Content */}
+          {/* Content with improved responsive grid */}
           {view === "grid" ? (
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-              <div className="xl:col-span-3">
-                {filteredSuppliers.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredSuppliers.map((supplier) => (
-                      <SupplierCard
-                        key={supplier.id}
-                        supplier={supplier}
-                        onEdit={handleEditSupplier}
-                        onDelete={handleDeleteSupplier}
-                        onClick={() => handleSupplierClick(supplier)}
-                      />
-                    ))}
+            <div className="w-full">
+              {/* Responsive Grid Layout */}
+              <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6 lg:gap-8">
+                {/* Main Suppliers Grid */}
+                <div className="2xl:col-span-4">
+                  {filteredSuppliers.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6">
+                      {filteredSuppliers.map((supplier) => (
+                        <SupplierCard
+                          key={supplier.id}
+                          supplier={supplier}
+                          onEdit={handleEditSupplier}
+                          onDelete={handleDeleteSupplier}
+                          onClick={() => handleSupplierClick(supplier)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="frosted-glass border-0 p-12 text-center">
+                      <p className="text-gray-500 text-lg">No suppliers found matching your criteria.</p>
+                    </Card>
+                  )}
+                </div>
+                
+                {/* Sidebar with Criteria Weights */}
+                <div className="2xl:col-span-1">
+                  <div className="sticky top-6">
+                    <CriteriaWeights />
                   </div>
-                ) : (
-                  <Card className="frosted-glass border-0 p-12 text-center">
-                    <p className="text-gray-500 text-lg">No suppliers found matching your criteria.</p>
-                  </Card>
-                )}
-              </div>
-              <div className="xl:col-span-1">
-                <div className="sticky top-6">
-                  <CriteriaWeights />
                 </div>
               </div>
             </div>
           ) : view === "matrix" ? (
             <div className="space-y-6">
-              {/* Performance Analytics Summary positioned above matrix */}
               <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -408,7 +415,9 @@ export const SupplierDashboard = () => {
                   </div>
                   <div className="frosted-glass p-4 rounded-xl">
                     <p className="text-sm text-gray-600">Top Performer</p>
-                    <p className="text-lg font-semibold text-green-600">TechCorp Solutions</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {topPerformers[0]?.name || 'TechCorp Solutions'}
+                    </p>
                   </div>
                   <div className="frosted-glass p-4 rounded-xl">
                     <p className="text-sm text-gray-600">Evaluations Complete</p>
@@ -421,12 +430,41 @@ export const SupplierDashboard = () => {
               </div>
             </div>
           ) : view === "analytics" ? (
-            <EvaluationAnalytics suppliers={suppliers} />
+            <div className="space-y-6">
+              {/* Top Performers Section */}
+              <div className="glass-card p-6 rounded-2xl">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Crown className="w-6 h-6 text-amber-600" />
+                  Top Performing Suppliers
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {topPerformers.map((supplier, index) => (
+                    <div key={supplier.id} className="frosted-glass p-4 rounded-xl relative">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                          index === 0 ? 'bg-yellow-500' : 
+                          index === 1 ? 'bg-gray-400' : 
+                          index === 2 ? 'bg-amber-600' : 'bg-blue-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <span className="font-semibold text-sm">{supplier.name}</span>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        {supplier.overallScore?.toFixed(1) || '85.0'}%
+                      </div>
+                      <div className="text-xs text-gray-600">{supplier.industry}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <EvaluationAnalytics suppliers={suppliers} />
+            </div>
           ) : null}
         </div>
 
-        {/* Voice Assistant - Always present */}
-        <VoiceAssistant onCommand={handleVoiceCommand} />
+        {/* Replace VoiceAssistant with ElevenLabsWidget */}
+        <ElevenLabsWidget />
         
         {/* Voice Command Processor */}
         <VoiceCommandProcessor

@@ -115,6 +115,55 @@
     box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.15);
   }
 
+  /* Liquid Button Effect */
+  .liquid-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .liquid-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .liquid-button:hover::before {
+    left: 100%;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass Input */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Hover Glow Effect */
+  .hover-glow {
+    transition: all 0.3s ease;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
+    transform: translateY(-2px);
+  }
+
   /* Optimized Animations */
   .smooth-transition {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -144,47 +193,84 @@
     animation: fade-in 0.2s ease-out;
   }
 
-  /* Improved Responsive Grid */
-  .responsive-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    width: 100%;
-    max-width: 100%;
+  /* ElevenLabs Widget Styling */
+  .widget-container {
+    border-radius: 12px;
+    overflow: hidden;
   }
 
-  /* Tablet and desktop adjustments */
-  @media (min-width: 768px) {
-    .responsive-grid {
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 2rem;
+  .widget-container elevenlabs-convai {
+    width: 100%;
+    min-height: 200px;
+    border-radius: 12px;
+  }
+
+  /* Responsive Grid Improvements */
+  .responsive-supplier-grid {
+    display: grid;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  /* Mobile first approach */
+  @media (min-width: 640px) {
+    .responsive-supplier-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
-    .responsive-grid {
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    .responsive-supplier-grid {
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
     }
   }
 
-  @media (min-width: 1280px) {
-    .responsive-grid {
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  @media (min-width: 1536px) {
+    .responsive-supplier-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  /* Ultra-wide screen support */
+  @media (min-width: 2048px) {
+    .responsive-supplier-grid {
+      grid-template-columns: repeat(5, 1fr);
       gap: 2.5rem;
     }
   }
 
   /* Mobile optimizations */
   @media (max-width: 640px) {
-    .responsive-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-    
     .glass-card, .frosted-glass {
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
+    
+    .responsive-supplier-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  /* Improved scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
   }
 }
