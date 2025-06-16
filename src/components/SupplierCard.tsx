@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Supplier } from "@/types/supplier";
 import { MoreVertical, Edit, Trash2, Building2, MapPin, Calendar } from "lucide-react";
 import { EditSupplierForm } from "./EditSupplierForm";
@@ -19,7 +19,7 @@ interface SupplierCardProps {
 export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  console.log('SupplierCard rendering, isEditDialogOpen:', isEditDialogOpen);
+  console.log('SupplierCard rendering for supplier:', supplier.name, 'isEditDialogOpen:', isEditDialogOpen);
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -45,11 +45,32 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
     setIsEditDialogOpen(false);
   };
 
+  const handleEditClick = () => {
+    console.log('Edit button clicked, opening sheet');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCardClick = () => {
+    console.log('Card clicked for supplier:', supplier.name);
+    onClick?.(supplier);
+  };
+
+  const handleMoreMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('More menu clicked');
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Delete clicked for supplier:', supplier.name);
+    onDelete(supplier.id);
+  };
+
   return (
     <>
       <Card 
         className="frosted-glass border-0 hover-glow smooth-transition cursor-pointer group overflow-hidden"
-        onClick={() => onClick?.(supplier)}
+        onClick={handleCardClick}
       >
         <CardHeader className="pb-3 relative">
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 smooth-transition">
@@ -59,10 +80,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                   variant="ghost" 
                   size="sm" 
                   className="glass-card w-8 h-8 p-0 hover:bg-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('More menu clicked');
-                  }}
+                  onClick={handleMoreMenuClick}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
@@ -71,8 +89,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                 <DropdownMenuItem 
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('Edit clicked, opening sheet');
-                    setIsEditDialogOpen(true);
+                    handleEditClick();
                   }}
                   className="hover:bg-white/20"
                 >
@@ -80,10 +97,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(supplier.id);
-                  }}
+                  onClick={handleDeleteClick}
                   className="text-red-600 hover:bg-red-50/50"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -146,19 +160,21 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
         </CardContent>
       </Card>
 
-      <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-xl font-bold text-blue-900">Edit Supplier</SheetTitle>
-          </SheetHeader>
-          
-          <EditSupplierForm
-            supplier={supplier}
-            onSubmit={handleEdit}
-            onCancel={handleCancel}
-          />
-        </SheetContent>
-      </Sheet>
+      {isEditDialogOpen && (
+        <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="text-xl font-bold text-blue-900">Edit Supplier</SheetTitle>
+            </SheetHeader>
+            
+            <EditSupplierForm
+              supplier={supplier}
+              onSubmit={handleEdit}
+              onCancel={handleCancel}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 };
