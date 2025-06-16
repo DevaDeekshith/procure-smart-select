@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy } from 'lucide-react';
 import { SupplierCard } from '@/components/SupplierCard';
@@ -136,6 +137,32 @@ export const SupplierDashboard = () => {
     suppliers.reduce((acc, supplier) => acc + (supplier.overallScore || 0), 0) / suppliers.length;
   const topPerformers = suppliers.filter((supplier) => (supplier.overallScore || 0) > 90).length;
 
+  // Handler functions
+  const handleSupplierSelect = (supplier: Supplier) => {
+    console.log('Selected supplier:', supplier);
+  };
+
+  const handleCriteriaSelect = (criteria: any) => {
+    console.log('Selected criteria:', criteria);
+    setActiveTab('evaluation');
+  };
+
+  const handleAddSupplier = (newSupplier: Supplier) => {
+    setSuppliers(prev => [...prev, newSupplier]);
+  };
+
+  const handleEditSupplier = (updatedSupplier: Supplier) => {
+    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+  };
+
+  const handleDeleteSupplier = (supplierId: string) => {
+    setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+  };
+
+  const handleFilterChange = (newFilters: { [key: string]: string }) => {
+    setFilters(newFilters);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="container mx-auto px-4 py-8 space-y-8">
@@ -153,8 +180,16 @@ export const SupplierDashboard = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <GlobalSearch />
-              <AddSupplierForm />
+              <GlobalSearch 
+                suppliers={suppliers}
+                onSupplierSelect={handleSupplierSelect}
+                onCriteriaSelect={handleCriteriaSelect}
+                onViewChange={setActiveTab}
+              />
+              <AddSupplierForm 
+                onSubmit={handleAddSupplier}
+                onCancel={() => {}}
+              />
             </div>
           </div>
         </div>
@@ -191,7 +226,7 @@ export const SupplierDashboard = () => {
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">{averageScore}</h3>
+                <h3 className="text-2xl font-bold text-gray-900">{Math.round(averageScore)}</h3>
                 <p className="text-gray-600">Average Score</p>
               </div>
             </div>
@@ -235,7 +270,7 @@ export const SupplierDashboard = () => {
             </Tabs>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
-              <AdvancedSearch onFilterChange={setFilters} />
+              <AdvancedSearch onApplyFilters={handleFilterChange} />
               
               <div className="flex items-center gap-3">
                 <Button
@@ -265,13 +300,25 @@ export const SupplierDashboard = () => {
             {viewMode === 'grid' ? (
               <div className="responsive-supplier-grid">
                 {filteredSuppliers.map((supplier) => (
-                  <SupplierCard key={supplier.id} supplier={supplier} />
+                  <SupplierCard 
+                    key={supplier.id} 
+                    supplier={supplier}
+                    onEdit={handleEditSupplier}
+                    onDelete={handleDeleteSupplier}
+                    onClick={handleSupplierSelect}
+                  />
                 ))}
               </div>
             ) : (
               <div className="space-y-4">
                 {filteredSuppliers.map((supplier) => (
-                  <SupplierCard key={supplier.id} supplier={supplier} variant="list" />
+                  <SupplierCard 
+                    key={supplier.id} 
+                    supplier={supplier}
+                    onEdit={handleEditSupplier}
+                    onDelete={handleDeleteSupplier}
+                    onClick={handleSupplierSelect}
+                  />
                 ))}
               </div>
             )}
@@ -285,7 +332,7 @@ export const SupplierDashboard = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               <AdvancedAnalytics suppliers={suppliers} />
               <div className="space-y-6">
-                <EvaluationAnalytics />
+                <EvaluationAnalytics suppliers={suppliers} />
                 
                 {/* Top Performing Suppliers */}
                 <Card className="frosted-glass border-0 shadow-xl">
