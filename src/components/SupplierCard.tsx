@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet } from "@/components/ui/sheet";
 import { EditSupplierForm } from "./EditSupplierForm";
 import { Supplier } from "@/types/supplier";
 import { MoreVertical, Edit, Trash2, Building2, MapPin, Calendar, Star, Award } from "lucide-react";
@@ -128,7 +129,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
         </CardContent>
       </Card>
 
-      {isEditDialogOpen && (
+      <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <EditSupplierForm
           supplier={supplier}
           onSubmit={(updatedSupplier) => {
@@ -137,7 +138,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
           }}
           onCancel={() => setIsEditDialogOpen(false)}
         />
-      )}
+      </Sheet>
     </>
   );
 };
