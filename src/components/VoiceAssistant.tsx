@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useVoiceAI, VoiceResponse } from '@/hooks/useVoiceAI';
 import { voiceWebhookService, WebhookResponse } from '@/services/voiceWebhookService';
-import { Mic, MicOff, Volume2, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Volume2, Loader2, AlertCircle } from 'lucide-react';
 
 interface VoiceAssistantProps {
   onCommand?: (command: any) => void;
@@ -17,70 +18,128 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
   const [isSupported, setIsSupported] = useState(false);
+  const [error, setError] = useState<string>('');
   const recognitionRef = useRef<any>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
   
   const [supportedLanguages] = useState([
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिंदी' },
     { code: 'bn', name: 'বাংলা' },
-    { code: 'te', name: 'తెలుగు' },
-    { code: 'mr', name: 'मराठी' },
-    { code: 'ta', name: 'தமிழ்' },
-    { code: 'gu', name: 'ગુજરાતી' }
+    { code: 'te', name: 'తెలుగు' }
   ]);
 
   useEffect(() => {
-    // Check if Speech Recognition is supported with proper type casting
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    initializeSpeechRecognition();
+    setupWebhookHandler();
     
-    if (SpeechRecognition) {
+    return () => {
+      cleanup();
+    };
+  }, [handleWebhookCommand, onCommand]);
+
+  const initializeSpeechRecognition = () => {
+    try {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        setIsSupported(false);
+        setError('Speech recognition not supported in this browser');
+        return;
+      }
+
       setIsSupported(true);
       const recognitionInstance = new SpeechRecognition();
       
-      // Configure speech recognition
+      // Configure with more reliable settings
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
       recognitionInstance.lang = 'en-US';
-      recognitionInstance.maxAlternatives = 1;
+      recognitionInstance.maxAlternatives = 3;
       
-      // Handle results
-      recognitionInstance.onresult = (event: any) => {
-        console.log('Speech recognition result:', event);
-        const transcript = event.results[0][0].transcript;
-        console.log('Transcript:', transcript);
-        
-        if (transcript && transcript.trim()) {
-          setLastCommand(transcript);
-          processTranscript(transcript);
-        }
-      };
-      
-      // Handle errors
-      recognitionInstance.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-      
-      // Handle end
-      recognitionInstance.onend = () => {
-        console.log('Speech recognition ended');
-        setIsListening(false);
-      };
-      
-      // Handle start
-      recognitionInstance.onstart = () => {
-        console.log('Speech recognition started');
-        setIsListening(true);
-      };
+      recognitionInstance.onresult = handleSpeechResult;
+      recognitionInstance.onerror = handleSpeechError;
+      recognitionInstance.onend = handleSpeechEnd;
+      recognitionInstance.onstart = handleSpeechStart;
       
       setRecognition(recognitionInstance);
       recognitionRef.current = recognitionInstance;
-    } else {
-      console.warn('Speech Recognition not supported in this browser');
+      setError('');
+    } catch (err) {
+      console.error('Error initializing speech recognition:', err);
       setIsSupported(false);
+      setError('Failed to initialize speech recognition');
     }
+  };
 
-    // Set up webhook handler
+  const handleSpeechResult = (event: any) => {
+    try {
+      console.log('Speech recognition result:', event);
+      
+      // Try multiple alternatives for better accuracy
+      let transcript = '';
+      for (let i = 0; i < event.results[0].length; i++) {
+        if (event.results[0][i].confidence > 0.7) {
+          transcript = event.results[0][i].transcript;
+          break;
+        }
+      }
+      
+      if (!transcript && event.results[0].length > 0) {
+        transcript = event.results[0][0].transcript;
+      }
+      
+      console.log('Final transcript:', transcript);
+      
+      if (transcript && transcript.trim()) {
+        setLastCommand(transcript);
+        processTranscript(transcript);
+        setError('');
+      }
+    } catch (err) {
+      console.error('Error processing speech result:', err);
+      setError('Error processing speech');
+    }
+  };
+
+  const handleSpeechError = (event: any) => {
+    console.error('Speech recognition error:', event.error);
+    setIsListening(false);
+    
+    const errorMessages: { [key: string]: string } = {
+      'network': 'Network error - check your internet connection',
+      'not-allowed': 'Microphone access denied - please allow microphone access',
+      'no-speech': 'No speech detected - please try again',
+      'aborted': 'Speech recognition was aborted',
+      'audio-capture': 'No microphone found - check your audio setup',
+      'service-not-allowed': 'Speech service not allowed'
+    };
+    
+    setError(errorMessages[event.error] || `Speech error: ${event.error}`);
+    
+    // Auto-retry for network errors
+    if (event.error === 'network' || event.error === 'no-speech') {
+      retryTimeoutRef.current = setTimeout(() => {
+        if (!isListening && recognition) {
+          console.log('Auto-retrying speech recognition...');
+          startListening();
+        }
+      }, 2000);
+    }
+  };
+
+  const handleSpeechEnd = () => {
+    console.log('Speech recognition ended');
+    setIsListening(false);
+  };
+
+  const handleSpeechStart = () => {
+    console.log('Speech recognition started');
+    setIsListening(true);
+    setError('');
+  };
+
+  const setupWebhookHandler = () => {
     voiceWebhookService.setCommandHandler(async (payload): Promise<WebhookResponse> => {
       const response: VoiceResponse = await handleWebhookCommand(payload);
       setLastCommand(payload.text);
@@ -100,13 +159,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
         response_text: response.message
       };
     });
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
-  }, [handleWebhookCommand, onCommand]);
+  };
 
   const processTranscript = async (transcript: string) => {
     try {
@@ -114,24 +167,25 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       await voiceWebhookService.simulateWebhook(transcript, 'en');
     } catch (error) {
       console.error('Error processing transcript:', error);
+      setError('Failed to process voice command');
     }
   };
 
-  const startListening = () => {
+  const startListening = async () => {
     if (!recognition || isProcessing || isListening) {
-      console.log('Cannot start listening:', { 
-        hasRecognition: !!recognition, 
-        isProcessing, 
-        isListening 
-      });
       return;
     }
 
     try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      
       console.log('Starting speech recognition...');
+      setError('');
       recognition.start();
     } catch (error) {
       console.error('Error starting speech recognition:', error);
+      setError('Microphone access required');
       setIsListening(false);
     }
   };
@@ -150,6 +204,10 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   };
 
   const handleClick = () => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+    
     if (isListening) {
       stopListening();
     } else {
@@ -170,18 +228,26 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     await voiceWebhookService.simulateWebhook(randomCommand);
   };
 
+  const cleanup = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+    }
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+  };
+
   if (!isSupported) {
     return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <Card className="frosted-glass border-0 w-80">
+      <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+        <Card className="frosted-glass border-0">
           <CardContent className="p-4">
-            <div className="text-center">
-              <div className="text-sm font-semibold text-red-600 mb-2">
-                Speech Recognition Not Supported
-              </div>
-              <div className="text-xs text-gray-600">
-                Your browser doesn't support speech recognition. Please try Chrome, Edge, or Safari.
-              </div>
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm font-semibold">Speech Not Supported</span>
+            </div>
+            <div className="text-xs text-gray-600">
+              Your browser doesn't support speech recognition. Try Chrome, Edge, or Safari.
             </div>
           </CardContent>
         </Card>
@@ -190,34 +256,37 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-4">
-      {(isListening || isProcessing) && (
-        <Card className="frosted-glass border-0 animate-fade-in w-80">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${
-                isListening ? 'bg-red-500' : 'bg-blue-500'
-              }`}></div>
-              <div className="text-sm font-semibold text-gray-700">
-                {isListening ? 'Jarvis is Listening...' : 'Processing Your Request...'}
+    <div className="fixed bottom-4 right-4 z-50 space-y-3">
+      {/* Status Card */}
+      {(isListening || isProcessing || error) && (
+        <Card className="frosted-glass border-0 animate-fade-in max-w-xs">
+          <CardContent className="p-3">
+            {error ? (
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                <div className="text-sm font-semibold text-red-600">Error</div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  isListening ? 'bg-red-500' : 'bg-blue-500'
+                }`}></div>
+                <div className="text-sm font-semibold text-gray-700">
+                  {isListening ? 'Listening...' : 'Processing...'}
+                </div>
+              </div>
+            )}
             
-            {isListening && (
-              <div className="text-xs text-gray-600 mb-2">
-                Speak clearly. Click the button again to stop listening.
-              </div>
-            )}
+            <div className="text-xs text-gray-600 mb-2">
+              {error || (isListening 
+                ? 'Speak clearly and click to stop' 
+                : 'Processing your command...'
+              )}
+            </div>
 
-            {isProcessing && (
-              <div className="text-xs text-gray-600 mb-2">
-                Processing your voice command...
-              </div>
-            )}
-
-            <div className="text-xs text-gray-600 mb-2 font-medium">Supported Languages:</div>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {supportedLanguages.slice(0, 4).map((lang) => (
+            {/* Supported Languages */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {supportedLanguages.map((lang) => (
                 <Badge key={lang.code} variant="secondary" className="text-xs">
                   {lang.name}
                 </Badge>
@@ -226,30 +295,23 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
 
             {lastCommand && (
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <div className="text-xs text-gray-500">Last command: "{lastCommand}"</div>
+                <div className="text-xs text-gray-500">"{lastCommand}"</div>
               </div>
             )}
-
-            <div className="mt-3 pt-2 border-t border-gray-200">
-              <div className="text-xs text-blue-600 font-medium mb-1">Try saying:</div>
-              <ul className="text-xs text-gray-500 space-y-1">
-                <li>• "Hello Jarvis, add supplier ABC Corp"</li>
-                <li>• "Score TechCorp 90 points for quality"</li>
-                <li>• "Generate a supplier report"</li>
-                <li>• "Show me the matrix view"</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Voice Button */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             onClick={handleClick}
             disabled={isProcessing}
-            className={`w-20 h-20 rounded-full shadow-2xl transition-all duration-200 relative overflow-hidden ${
-              isListening
+            className={`w-16 h-16 rounded-full shadow-xl transition-all duration-200 relative ${
+              error
+                ? 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-400'
+                : isListening
                 ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse border-2 border-red-400' 
                 : isProcessing
                 ? 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-400'
@@ -257,45 +319,41 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
             }`}
           >
             {isProcessing ? (
-              <Loader2 className="w-8 h-8 animate-spin" />
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : error ? (
+              <AlertCircle className="w-6 h-6" />
             ) : isListening ? (
-              <Mic className="w-8 h-8" />
+              <Mic className="w-6 h-6" />
             ) : (
-              <MicOff className="w-8 h-8" />
+              <MicOff className="w-6 h-6" />
             )}
             
-            {isListening && (
-              <>
-                <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"></div>
-                <div className="absolute inset-2 rounded-full border-2 border-red-300 animate-ping opacity-20"></div>
-              </>
+            {isListening && !error && (
+              <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"></div>
             )}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left" className="glass-card border-0 max-w-xs">
           <div className="space-y-2">
             <p className="font-medium">
-              {isListening ? 'Listening... Click to Stop' : 'Click to Talk to Jarvis'}
-            </p>
-            <p className="text-xs text-gray-600">
-              {isListening 
-                ? 'Speak your command clearly' 
-                : 'Click to start voice recognition'
+              {error 
+                ? 'Click to retry'
+                : isListening 
+                ? 'Listening... Click to Stop' 
+                : 'Click to Talk to Jarvis'
               }
             </p>
-            <div className="pt-1 border-t border-gray-200">
-              <p className="text-xs text-blue-600 font-medium">Instructions:</p>
-              <ul className="text-xs text-gray-500 space-y-1">
-                <li>• Click button to start listening</li>
-                <li>• Speak your command clearly</li>
-                <li>• Click again to stop and process</li>
-                <li>• Wait for Jarvis to respond</li>
-              </ul>
-            </div>
+            <p className="text-xs text-gray-600">
+              {error || (isListening 
+                ? 'Speak your command clearly' 
+                : 'Click to start voice recognition'
+              )}
+            </p>
           </div>
         </TooltipContent>
       </Tooltip>
 
+      {/* Test Button (Development) */}
       {process.env.NODE_ENV === 'development' && (
         <Tooltip>
           <TooltipTrigger asChild>

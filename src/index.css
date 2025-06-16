@@ -3,84 +3,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Liquid Glass Design System - macOS Tahoe Style */
+/* Optimized Liquid Glass Design System */
 
 @layer base {
   :root {
     --background: 240 13% 97%;
     --foreground: 240 10% 3.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 221 83% 53%;
+    --radius: 0.5rem;
 
-    --radius: 0.75rem;
-
-    /* Liquid Glass Variables */
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.18);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    --blur-backdrop: blur(20px);
-    --gradient-primary: linear-gradient(135deg, rgba(66, 165, 245, 0.2) 0%, rgba(33, 150, 243, 0.1) 100%);
-    --gradient-secondary: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+    /* Optimized Glass Variables */
+    --glass-bg: rgba(255, 255, 255, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
+    --blur-backdrop: blur(12px);
   }
 
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 221 83% 53%;
 
-    /* Dark mode glass variables */
-    --glass-bg: rgba(0, 0, 0, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    --gradient-primary: linear-gradient(135deg, rgba(66, 165, 245, 0.15) 0%, rgba(33, 150, 243, 0.08) 100%);
-    --gradient-secondary: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    /* Dark mode optimized */
+    --glass-bg: rgba(0, 0, 0, 0.2);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -89,15 +68,29 @@
     @apply border-border;
   }
 
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-gradient-to-br from-blue-50 via-white to-blue-100 text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+    width: 100%;
   }
 }
 
 @layer components {
-  /* Liquid Glass Card */
+  /* Optimized Glass Components */
   .glass-card {
     background: var(--glass-bg);
     backdrop-filter: var(--blur-backdrop);
@@ -107,118 +100,32 @@
     border-radius: var(--radius);
   }
 
-  /* Frosted Glass Effect */
   .frosted-glass {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.15);
   }
 
-  /* Liquid Button */
-  .liquid-button {
-    background: var(--gradient-primary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .liquid-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(66, 165, 245, 0.3);
-    background: linear-gradient(135deg, rgba(66, 165, 245, 0.3) 0%, rgba(33, 150, 243, 0.2) 100%);
-  }
-
-  /* Smooth Animations */
+  /* Optimized Animations */
   .smooth-transition {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Glass Input */
-  .glass-input {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
-
-  .glass-input:focus {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(66, 165, 245, 0.5);
-    box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
-  }
-
-  /* Floating Elements */
   .floating {
-    animation: float 6s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
   }
 
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+    50% { transform: translateY(-6px); }
   }
 
-  /* Gradient Text */
-  .gradient-text {
-    background: linear-gradient(135deg, #42a5f5 0%, #2196f3 50%, #1976d2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Hover Glow */
-  .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(66, 165, 245, 0.4);
-  }
-
-  /* Info Icon Positioning */
-  .info-icon {
-    @apply inline-flex items-center justify-center w-4 h-4 ml-2 text-gray-400 hover:text-gray-600 cursor-help;
-    vertical-align: middle;
-  }
-
-  .info-icon-tooltip {
-    @apply max-w-xs;
-  }
-
-  /* Properly positioned info icons in forms and labels */
-  .label-with-info {
-    @apply flex items-center gap-1;
-  }
-
-  .label-with-info .info-icon {
-    @apply ml-1 w-3.5 h-3.5;
-  }
-
-  /* Card header info icons */
-  .card-header-with-info {
-    @apply flex items-center justify-between;
-  }
-
-  .card-header-with-info .info-icon {
-    @apply ml-2;
-  }
-
-  /* Animation Delay Utilities */
-  .animation-delay-300 {
-    animation-delay: 300ms;
-  }
-
-  .animation-delay-600 {
-    animation-delay: 600ms;
-  }
-
-  .animation-delay-900 {
-    animation-delay: 900ms;
-  }
-
-  /* Fade in animation */
   @keyframes fade-in {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
@@ -227,29 +134,28 @@
   }
 
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fade-in 0.2s ease-out;
   }
 
-  /* Voice button specific styles */
-  .voice-button-glow {
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
-    animation: pulse-black 2s infinite;
+  /* Responsive utilities */
+  .responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
   }
 
-  @keyframes pulse-black {
-    0% {
-      transform: scale(0.95);
-      box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
+  @media (max-width: 768px) {
+    .responsive-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
     }
-    
-    70% {
-      transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
-    }
-    
-    100% {
-      transform: scale(0.95);
-      box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .glass-card, .frosted-glass {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
   }
 }
