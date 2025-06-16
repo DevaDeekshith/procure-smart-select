@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy } from 'lucide-react';
+import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy, Plus } from 'lucide-react';
 import { SupplierCard } from '@/components/SupplierCard';
 import { AddSupplierForm } from '@/components/AddSupplierForm';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Supplier } from '@/types/supplier';
 import { ElevenLabsWidget } from './ElevenLabsWidget';
 
@@ -20,6 +21,7 @@ export const SupplierDashboard = () => {
   const [activeTab, setActiveTab] = useState("suppliers");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddSupplierDialogOpen, setIsAddSupplierDialogOpen] = useState(false);
 
   useEffect(() => {
     // Fetch suppliers from API or use dummy data
@@ -135,8 +137,15 @@ export const SupplierDashboard = () => {
     setActiveTab('evaluation');
   };
 
-  const handleAddSupplier = (newSupplier: Supplier) => {
-    setSuppliers(prev => [...prev, newSupplier]);
+  const handleAddSupplier = (newSupplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const supplier: Supplier = {
+      ...newSupplier,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setSuppliers(prev => [...prev, supplier]);
+    setIsAddSupplierDialogOpen(false);
   };
 
   const handleEditSupplier = (updatedSupplier: Supplier) => {
@@ -174,10 +183,21 @@ export const SupplierDashboard = () => {
                 onCriteriaSelect={handleCriteriaSelect}
                 onViewChange={setActiveTab}
               />
-              <AddSupplierForm 
-                onSubmit={handleAddSupplier}
-                onCancel={() => {}}
-              />
+              
+              <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="liquid-button text-white px-6 py-3 h-12 rounded-xl hover-glow">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Supplier
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <AddSupplierForm 
+                    onSubmit={handleAddSupplier}
+                    onCancel={() => setIsAddSupplierDialogOpen(false)}
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>

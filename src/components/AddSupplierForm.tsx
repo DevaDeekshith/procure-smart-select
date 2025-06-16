@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { X, Plus, Info, User, Building2, Mail, Phone, MapPin, Calendar, Award } from "lucide-react";
 import { Supplier } from "@/types/supplier";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface AddSupplierFormProps {
   onSubmit: (supplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -110,7 +110,7 @@ export const AddSupplierForm = ({ onSubmit, onCancel }: AddSupplierFormProps) =>
 
   return (
     <TooltipProvider>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-0 shadow-2xl">
+      <div className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-0 shadow-2xl">
         <DialogHeader className="text-center pb-6">
           <div className="mx-auto glass-card p-4 rounded-2xl mb-4 w-fit">
             <Building2 className="w-8 h-8 text-blue-600" />
@@ -413,7 +413,7 @@ export const AddSupplierForm = ({ onSubmit, onCancel }: AddSupplierFormProps) =>
             Add Supplier
           </Button>
         </DialogFooter>
-      </DialogContent>
+      </div>
     </TooltipProvider>
   );
 };
