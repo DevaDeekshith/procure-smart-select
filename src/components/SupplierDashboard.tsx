@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import { Supplier } from '@/types/supplier';
 import { ElevenLabsWidget } from './ElevenLabsWidget';
 
@@ -191,12 +191,15 @@ export const SupplierDashboard = () => {
                     Add Supplier
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <AddSupplierForm 
-                    onSubmit={handleAddSupplier}
-                    onCancel={() => setIsAddSupplierDialogOpen(false)}
-                  />
-                </DialogContent>
+                <DialogPortal>
+                  <DialogOverlay />
+                  <DialogContent>
+                    <AddSupplierForm 
+                      onSubmit={handleAddSupplier}
+                      onCancel={() => setIsAddSupplierDialogOpen(false)}
+                    />
+                  </DialogContent>
+                </DialogPortal>
               </Dialog>
             </div>
           </div>
