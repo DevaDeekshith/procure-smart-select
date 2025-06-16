@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -69,36 +68,36 @@ export const CriteriaWeights = () => {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-6">
       {/* Enhanced Header */}
-      <div className="glass-card p-6 rounded-2xl">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="glass-card p-3 rounded-xl">
-            <Layers className="w-8 h-8 text-blue-600" />
+      <div className="frosted-glass p-8 rounded-3xl shadow-2xl">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="glass-card p-4 rounded-2xl shadow-lg">
+            <Layers className="w-10 h-10 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold gradient-text">Evaluation Framework</h2>
-            <p className="text-gray-600">Comprehensive criteria weights and performance scales</p>
+            <h2 className="text-3xl font-bold gradient-text">Evaluation Framework</h2>
+            <p className="text-gray-600 text-lg">Comprehensive criteria weights and performance scales</p>
           </div>
         </div>
 
-        {/* Criteria Overview Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="frosted-glass border-0 hover-glow smooth-transition">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-blue-900 flex items-center gap-2">
-                <Target className="w-5 h-5" />
+        {/* Criteria Overview Cards - Fixed Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+          <Card className="frosted-glass border-0 hover-glow smooth-transition shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-3">
+                <Target className="w-6 h-6" />
                 Weight Distribution
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={criteriaChartData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={70}
+                    outerRadius={80}
                     dataKey="weight"
                     label={({ name, weight }) => `${weight}%`}
                     labelLine={false}
@@ -113,39 +112,39 @@ export const CriteriaWeights = () => {
             </CardContent>
           </Card>
 
-          <Card className="frosted-glass border-0 hover-glow smooth-transition">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-green-900 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
+          <Card className="frosted-glass border-0 hover-glow smooth-transition shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-bold text-green-900 flex items-center gap-3">
+                <BarChart3 className="w-6 h-6" />
                 Category Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={categoryData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="category" fontSize={10} />
-                  <YAxis fontSize={10} />
+                  <XAxis dataKey="category" fontSize={12} />
+                  <YAxis fontSize={12} />
                   <Tooltip formatter={(value) => [`${value}%`, 'Weight']} />
-                  <Bar dataKey="weight" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="weight" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card className="frosted-glass border-0 hover-glow smooth-transition">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                <Award className="w-5 h-5" />
+          <Card className="frosted-glass border-0 hover-glow smooth-transition shadow-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-bold text-purple-900 flex items-center gap-3">
+                <Award className="w-6 h-6" />
                 Impact Radar
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={200}>
                 <RadarChart data={radarData}>
                   <PolarGrid />
-                  <PolarAngleAxis dataKey="criteria" fontSize={10} />
-                  <PolarRadiusAxis angle={90} domain={[0, 25]} fontSize={8} />
+                  <PolarAngleAxis dataKey="criteria" fontSize={11} />
+                  <PolarRadiusAxis angle={90} domain={[0, 25]} fontSize={9} />
                   <Radar name="Weight" dataKey="weight" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.3} strokeWidth={2} />
                   <Tooltip />
                 </RadarChart>
@@ -155,59 +154,59 @@ export const CriteriaWeights = () => {
         </div>
       </div>
 
-      {/* Enhanced Detailed Criteria - Card Grid Layout */}
-      <Card className="frosted-glass border-0">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
+      {/* Enhanced Detailed Criteria - Fixed Grid Layout */}
+      <Card className="frosted-glass border-0 shadow-2xl">
+        <CardHeader className="p-8">
+          <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <TrendingUp className="w-7 h-7" />
             Detailed Evaluation Criteria
           </CardTitle>
-          <p className="text-gray-600">Interactive breakdown of all evaluation parameters</p>
+          <p className="text-gray-600 text-lg">Interactive breakdown of all evaluation parameters</p>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="p-8">
+          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-8">
             {DEFAULT_CRITERIA.map((criteria) => (
-              <div key={criteria.id} className="glass-card p-6 rounded-xl hover-glow smooth-transition">
-                <div className="flex items-start space-x-4 mb-4">
-                  <div className="flex-shrink-0 p-3 rounded-full glass-card">
+              <div key={criteria.id} className="frosted-glass p-8 rounded-2xl hover-glow smooth-transition shadow-lg">
+                <div className="flex items-start space-x-6 mb-6">
+                  <div className="flex-shrink-0 p-4 rounded-2xl glass-card shadow-md">
                     {getIcon(criteria.category)}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-bold text-gray-900 text-lg leading-tight">{criteria.name}</h4>
-                      <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 text-sm px-3 py-1 ml-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="font-bold text-gray-900 text-xl leading-tight">{criteria.name}</h4>
+                      <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 text-sm px-4 py-2 ml-4 rounded-full shadow-sm">
                         {criteria.weight}%
                       </Badge>
                     </div>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{criteria.description}</p>
+                    <p className="text-gray-600 text-sm mb-6 line-clamp-2">{criteria.description}</p>
                     
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-xs text-gray-500">
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-sm text-gray-500">
                         <span className="font-medium">Impact Level</span>
                         <span>{criteria.weight}% of total score</span>
                       </div>
                       <div className="relative">
-                        <Progress value={criteria.weight * 4} className="h-2" />
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full opacity-20"></div>
+                        <Progress value={criteria.weight * 4} className="h-3 rounded-full" />
+                        <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full opacity-20"></div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
                 {criteria.subCriteria && (
-                  <div className="space-y-2 pt-4 border-t border-gray-100">
-                    <h5 className="font-semibold text-gray-700 text-xs uppercase tracking-wider flex items-center gap-2">
+                  <div className="space-y-3 pt-6 border-t border-white/20">
+                    <h5 className="font-semibold text-gray-700 text-sm uppercase tracking-wider flex items-center gap-3">
                       <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                       Sub-Criteria
                     </h5>
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                       {criteria.subCriteria.map((sub) => (
-                        <div key={sub.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-100">
-                          <div className="flex-1">
+                        <div key={sub.id} className="flex items-center justify-between p-4 frosted-glass rounded-xl border border-white/10 shadow-sm">
+                          <div className="flex-1 min-w-0">
                             <span className="font-medium text-gray-800 text-sm">{sub.name}</span>
                             <p className="text-xs text-gray-600 mt-1">{sub.description}</p>
                           </div>
-                          <Badge variant="outline" className="text-xs ml-3 glass-card border-0">
+                          <Badge variant="outline" className="text-xs ml-4 glass-card border-0 px-3 py-1 rounded-full">
                             {sub.weight}%
                           </Badge>
                         </div>
@@ -221,33 +220,33 @@ export const CriteriaWeights = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Performance Scoring Scale */}
-      <Card className="frosted-glass border-0">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-purple-900 flex items-center gap-2">
-            <Star className="w-6 h-6" />
+      {/* Enhanced Performance Scoring Scale - Fixed Grid */}
+      <Card className="frosted-glass border-0 shadow-2xl">
+        <CardHeader className="p-8">
+          <CardTitle className="text-2xl font-bold text-purple-900 flex items-center gap-3">
+            <Star className="w-7 h-7" />
             Performance Scoring Framework
           </CardTitle>
-          <p className="text-gray-600">Visual representation of scoring thresholds and performance benchmarks</p>
+          <p className="text-gray-600 text-lg">Visual representation of scoring thresholds and performance benchmarks</p>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <CardContent className="p-8">
+          <div className="grid grid-cols-1 2xl:grid-cols-2 gap-12">
             {/* Enhanced Score Range Visualization */}
             <div className="space-y-6">
-              <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+              <h4 className="font-semibold text-gray-800 mb-6 flex items-center gap-3 text-lg">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
                 Score Distribution Analysis
               </h4>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={scoringData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="label" fontSize={10} angle={-45} textAnchor="end" height={80} />
-                  <YAxis fontSize={10} />
+                  <XAxis dataKey="label" fontSize={11} angle={-45} textAnchor="end" height={100} />
+                  <YAxis fontSize={11} />
                   <Tooltip 
                     formatter={(value, name) => [`${value} points`, 'Max Score']} 
                     labelFormatter={(label) => `Performance Level: ${label}`}
                   />
-                  <Bar dataKey="score" radius={[4, 4, 0, 0]} fill="url(#colorGradient)" />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]} fill="url(#colorGradient)" />
                   <defs>
                     <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
@@ -260,17 +259,17 @@ export const CriteriaWeights = () => {
 
             {/* Enhanced Performance Level Cards */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-600" />
+              <h4 className="font-semibold text-gray-800 mb-6 flex items-center gap-3 text-lg">
+                <Award className="w-6 h-6 text-purple-600" />
                 Performance Benchmarks
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {Object.entries(SCORING_SCALE).map(([key, scale]) => (
-                  <div key={key} className="glass-card p-4 rounded-xl hover-glow smooth-transition">
+                  <div key={key} className="frosted-glass p-6 rounded-2xl hover-glow smooth-transition shadow-lg">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-5">
                         <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center"
+                          className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
                           style={{ 
                             background: `linear-gradient(135deg, ${
                               key === 'EXCELLENT' ? '#10B981, #059669' : 
@@ -280,17 +279,17 @@ export const CriteriaWeights = () => {
                             })`
                           }}
                         >
-                          <div className="w-3 h-3 bg-white rounded-full"></div>
+                          <div className="w-4 h-4 bg-white rounded-full"></div>
                         </div>
                         <div>
-                          <div className="font-bold text-gray-900 text-lg">{scale.label}</div>
+                          <div className="font-bold text-gray-900 text-xl">{scale.label}</div>
                           <div className="text-sm text-gray-600 mt-1">{scale.description}</div>
                         </div>
                       </div>
                       <div className="text-right">
                         <Badge 
                           variant="outline" 
-                          className="text-sm font-mono px-3 py-1 glass-card border-0"
+                          className="text-sm font-mono px-4 py-2 frosted-glass border-0 rounded-full shadow-sm"
                           style={{ 
                             background: `linear-gradient(135deg, ${
                               key === 'EXCELLENT' ? 'rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)' : 
@@ -306,7 +305,7 @@ export const CriteriaWeights = () => {
                         >
                           {scale.min}-{scale.max}
                         </Badge>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 mt-2">
                           Range: {scale.max - scale.min} pts
                         </div>
                       </div>
