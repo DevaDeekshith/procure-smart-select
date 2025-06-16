@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useVoiceAI } from '@/hooks/useVoiceAI';
+import { useVoiceAI, VoiceResponse } from '@/hooks/useVoiceAI';
 import { voiceWebhookService, WebhookResponse } from '@/services/voiceWebhookService';
 import { Mic, MicOff, Volume2, Loader2 } from 'lucide-react';
 
@@ -15,6 +15,8 @@ interface VoiceAssistantProps {
 export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   const { isListening, isProcessing, toggleListening, handleWebhookCommand } = useVoiceAI();
   const [lastCommand, setLastCommand] = useState<string>('');
+  const [isConversing, setIsConversing] = useState(false);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [supportedLanguages] = useState([
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिंदी' },
@@ -26,9 +28,54 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   ]);
 
   useEffect(() => {
+    // Initialize speech recognition
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onresult = async (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+
+        if (event.results[event.results.length - 1].isFinal) {
+          console.log('Final transcript:', transcript);
+          setLastCommand(transcript);
+          
+          // Process the command
+          const response = await voiceWebhookService.simulateWebhook(transcript);
+          
+          if (onCommand && response.action) {
+            onCommand({
+              action: response.action,
+              data: response.data
+            });
+          }
+        }
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+      };
+
+      recognitionInstance.onend = () => {
+        if (isListening && isConversing) {
+          // Restart recognition if still listening
+          recognitionInstance.start();
+        }
+      };
+
+      setRecognition(recognitionInstance);
+    }
+
     // Set up webhook handler
     voiceWebhookService.setCommandHandler(async (payload): Promise<WebhookResponse> => {
-      const response = await handleWebhookCommand(payload);
+      const response: VoiceResponse = await handleWebhookCommand(payload);
       setLastCommand(payload.text);
       
       if (onCommand && response.action) {
@@ -46,7 +93,26 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
         response_text: response.message
       };
     });
-  }, [handleWebhookCommand, onCommand]);
+  }, [handleWebhookCommand, onCommand, isListening, isConversing]);
+
+  const handleVoiceToggle = async () => {
+    if (!recognition) {
+      console.error('Speech recognition not supported');
+      return;
+    }
+
+    if (isListening) {
+      // Stop listening
+      setIsConversing(false);
+      recognition.stop();
+      await toggleListening();
+    } else {
+      // Start listening
+      setIsConversing(true);
+      recognition.start();
+      await toggleListening();
+    }
+  };
 
   // Test function for demonstration
   const testVoiceCommand = async () => {
@@ -69,9 +135,9 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <div className="text-sm font-semibold text-gray-700">Voice Assistant Active</div>
+              <div className="text-sm font-semibold text-gray-700">Jarvis Assistant Active</div>
             </div>
-            <div className="text-xs text-gray-600 mb-2 font-medium">Supported Languages:</div>
+            <div className="text-xs text-gray-600 mb-2 font-medium">Listening in Multiple Languages:</div>
             <div className="flex flex-wrap gap-1 mb-3">
               {supportedLanguages.slice(0, 4).map((lang) => (
                 <Badge key={lang.code} variant="secondary" className="text-xs">
@@ -81,16 +147,17 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
             </div>
             {lastCommand && (
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <div className="text-xs text-gray-500">Last: {lastCommand}</div>
+                <div className="text-xs text-gray-500">You said: "{lastCommand}"</div>
               </div>
             )}
             <div className="mt-3 pt-2 border-t border-gray-200">
               <div className="text-xs text-blue-600 font-medium mb-1">Try saying:</div>
               <ul className="text-xs text-gray-500 space-y-1">
-                <li>• "Add supplier [name]"</li>
-                <li>• "Score supplier [name]"</li>
-                <li>• "Generate report"</li>
-                <li>• "Show matrix view"</li>
+                <li>• "Hello Jarvis, add supplier ABC Corp"</li>
+                <li>• "Score TechCorp 90 points for quality"</li>
+                <li>• "Generate a supplier report"</li>
+                <li>• "Show me the matrix view"</li>
+                <li>• "What suppliers do we have?"</li>
               </ul>
             </div>
           </CardContent>
@@ -101,7 +168,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onClick={toggleListening}
+            onClick={handleVoiceToggle}
             disabled={isProcessing}
             className={`w-20 h-20 rounded-full shadow-2xl smooth-transition relative overflow-hidden ${
               isListening 
@@ -129,21 +196,21 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
         <TooltipContent side="left" className="glass-card border-0 max-w-xs">
           <div className="space-y-2">
             <p className="font-medium">
-              {isListening ? 'Voice Assistant Active' : 'Activate Voice Assistant'}
+              {isListening ? 'Jarvis is Listening' : 'Activate Jarvis Assistant'}
             </p>
             <p className="text-xs text-gray-600">
               {isListening 
-                ? 'Listening for commands in multiple languages' 
-                : 'Click to start voice control'
+                ? 'Speak naturally - I can understand multiple languages' 
+                : 'Click to start conversing with your AI assistant'
               }
             </p>
             <div className="pt-1 border-t border-gray-200">
-              <p className="text-xs text-blue-600 font-medium">Try saying:</p>
+              <p className="text-xs text-blue-600 font-medium">Example commands:</p>
               <ul className="text-xs text-gray-500 space-y-1">
-                <li>• "Add supplier [name]"</li>
-                <li>• "Score supplier [name]"</li>
-                <li>• "Generate report"</li>
-                <li>• "Show matrix view"</li>
+                <li>• "Hello Jarvis, show me all suppliers"</li>
+                <li>• "Add a new supplier called XYZ Corp"</li>
+                <li>• "Score ABC Company 95 for delivery"</li>
+                <li>• "Generate a performance report"</li>
               </ul>
             </div>
           </div>
