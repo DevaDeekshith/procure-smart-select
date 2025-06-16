@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,8 +18,8 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   const [lastCommand, setLastCommand] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const isRecordingRef = useRef(false);
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -40,20 +41,33 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true
+            autoGainControl: true,
+            sampleRate: 44100
           } 
         });
         
         setStream(mediaStream);
         
+        // Try different MIME types for better compatibility
+        let mimeType = 'audio/webm;codecs=opus';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'audio/webm';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = 'audio/mp4';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+              mimeType = '';
+            }
+          }
+        }
+        
         const recorder = new MediaRecorder(mediaStream, {
-          mimeType: 'audio/webm;codecs=opus'
+          mimeType: mimeType || undefined
         });
         
         recorder.ondataavailable = (event) => {
           console.log('Audio data available:', event.data.size);
-          if (event.data.size > 0) {
-            setAudioChunks(prev => [...prev, event.data]);
+          if (event.data && event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
           }
         };
 
@@ -64,11 +78,15 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
 
         recorder.onstart = () => {
           console.log('MediaRecorder started');
-          setAudioChunks([]);
+          audioChunksRef.current = [];
+        };
+
+        recorder.onerror = (event) => {
+          console.error('MediaRecorder error:', event);
         };
 
         setMediaRecorder(recorder);
-        console.log('MediaRecorder initialized successfully');
+        console.log('MediaRecorder initialized successfully with mimeType:', mimeType);
       } catch (error) {
         console.error('Error accessing microphone:', error);
       }
@@ -108,16 +126,18 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   }, [handleWebhookCommand, onCommand]);
 
   const processRecordedAudio = async () => {
-    console.log('Processing recorded audio, chunks:', audioChunks.length);
+    console.log('Processing recorded audio, chunks:', audioChunksRef.current.length);
     
-    if (audioChunks.length === 0) {
+    if (audioChunksRef.current.length === 0) {
       console.log('No audio chunks to process');
       return;
     }
 
     try {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
-      console.log('Audio blob created:', audioBlob.size, 'bytes');
+      const audioBlob = new Blob(audioChunksRef.current, { 
+        type: audioChunksRef.current[0]?.type || 'audio/webm'
+      });
+      console.log('Audio blob created:', audioBlob.size, 'bytes', 'type:', audioBlob.type);
 
       if (audioBlob.size === 0) {
         console.log('Audio blob is empty');
@@ -135,23 +155,32 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
         console.log('No transcription result');
       }
 
-      setAudioChunks([]);
+      audioChunksRef.current = [];
     } catch (error) {
       console.error('Error processing recorded audio:', error);
     }
   };
 
   const startRecording = () => {
-    if (!mediaRecorder || isProcessing || isRecordingRef.current) return;
+    if (!mediaRecorder || isProcessing || isRecordingRef.current) {
+      console.log('Cannot start recording:', { 
+        hasRecorder: !!mediaRecorder, 
+        isProcessing, 
+        isAlreadyRecording: isRecordingRef.current 
+      });
+      return;
+    }
 
     console.log('Starting recording...');
     setIsRecording(true);
     isRecordingRef.current = true;
-    setAudioChunks([]);
+    audioChunksRef.current = [];
     
     try {
       if (mediaRecorder.state === 'inactive') {
-        mediaRecorder.start(100); // Collect data every 100ms
+        // Start recording with time slices for better data collection
+        mediaRecorder.start(250); // Collect data every 250ms
+        console.log('MediaRecorder started with state:', mediaRecorder.state);
       }
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -160,13 +189,21 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       return;
     }
 
+    // Set maximum recording time
     recordingTimeoutRef.current = setTimeout(() => {
+      console.log('Recording timeout reached');
       stopRecording();
-    }, 30000); // Maximum 30 seconds
+    }, 10000); // Maximum 10 seconds
   };
 
   const stopRecording = () => {
-    if (!mediaRecorder || !isRecordingRef.current) return;
+    if (!mediaRecorder || !isRecordingRef.current) {
+      console.log('Cannot stop recording:', { 
+        hasRecorder: !!mediaRecorder, 
+        isRecording: isRecordingRef.current 
+      });
+      return;
+    }
 
     console.log('Stopping recording...');
     setIsRecording(false);
@@ -180,6 +217,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     try {
       if (mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
+        console.log('MediaRecorder stopped, state:', mediaRecorder.state);
       }
     } catch (error) {
       console.error('Error stopping recording:', error);
@@ -188,19 +226,33 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     startRecording();
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     stopRecording();
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isRecordingRef.current) {
+      stopRecording();
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     startRecording();
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     stopRecording();
   };
 
@@ -276,11 +328,16 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
           <Button
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             disabled={isProcessing}
-            className={`w-20 h-20 rounded-full shadow-2xl smooth-transition relative overflow-hidden select-none cursor-pointer ${
+            style={{ 
+              userSelect: 'none', 
+              touchAction: 'none',
+              WebkitUserSelect: 'none'
+            }}
+            className={`w-20 h-20 rounded-full shadow-2xl smooth-transition relative overflow-hidden select-none cursor-pointer touch-none ${
               isRecording
                 ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse hover-glow border-2 border-red-400' 
                 : isProcessing
