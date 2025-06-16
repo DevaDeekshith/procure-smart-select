@@ -22,10 +22,10 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
   }, [agentId]);
 
   return (
-    <div className="fixed top-20 right-6 z-50 w-80 max-w-sm">
-      <div className="frosted-glass border-0 rounded-2xl overflow-hidden shadow-2xl hover-glow smooth-transition">
+    <div className="fixed top-20 right-6 z-50">
+      <div className="w-80 max-w-sm liquid-glass p-4 rounded-2xl shadow-2xl hover-glow smooth-transition">
         {/* ElevenLabs Conversational AI Widget */}
-        <div className="widget-container bg-white/5 backdrop-blur-xl">
+        <div className="widget-container overflow-hidden rounded-xl">
           <elevenlabs-convai agent-id={agentId}></elevenlabs-convai>
         </div>
       </div>

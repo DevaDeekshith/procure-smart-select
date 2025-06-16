@@ -161,55 +161,61 @@ export const SupplierDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+    <div className="min-h-screen liquid-glass-bg">
       <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="frosted-glass p-8 rounded-3xl shadow-2xl">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="glass-card p-4 rounded-2xl shadow-lg">
-                <Building2 className="w-10 h-10 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold gradient-text">CHANAKYA</h1>
-                <p className="text-gray-600 text-lg">Strategic Supplier Evaluation & Management Portal</p>
+        {/* Google-style Centered Header */}
+        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-8">
+          {/* Centered Logo and Title */}
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="liquid-glass p-6 rounded-3xl shadow-2xl hover-glow floating">
+                <Building2 className="w-16 h-16 text-blue-600" />
               </div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <GlobalSearch 
-                suppliers={suppliers}
-                onSupplierSelect={handleSupplierSelect}
-                onCriteriaSelect={handleCriteriaSelect}
-                onViewChange={setActiveTab}
-              />
-              
-              <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="liquid-button text-white px-6 py-3 h-12 rounded-xl hover-glow">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Supplier
-                  </Button>
-                </DialogTrigger>
-                <DialogPortal>
-                  <DialogOverlay />
-                  <DialogContent>
-                    <AddSupplierForm 
-                      onSubmit={handleAddSupplier}
-                      onCancel={() => setIsAddSupplierDialogOpen(false)}
-                    />
-                  </DialogContent>
-                </DialogPortal>
-              </Dialog>
+            <h1 className="text-6xl font-bold gradient-text tracking-wide">CHANAKYA</h1>
+            <p className="text-gray-600 text-xl max-w-2xl mx-auto">Strategic Supplier Evaluation & Management Portal</p>
+          </div>
+          
+          {/* Centered Search and Actions */}
+          <div className="w-full max-w-3xl space-y-4">
+            <div className="liquid-glass p-6 rounded-3xl shadow-2xl hover-glow">
+              <div className="flex flex-col lg:flex-row items-center gap-4">
+                <div className="flex-1 w-full">
+                  <GlobalSearch 
+                    suppliers={suppliers}
+                    onSupplierSelect={handleSupplierSelect}
+                    onCriteriaSelect={handleCriteriaSelect}
+                    onViewChange={setActiveTab}
+                  />
+                </div>
+                
+                <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="liquid-button text-white px-8 py-4 h-14 rounded-2xl hover-glow whitespace-nowrap">
+                      <Plus className="w-5 h-5 mr-2" />
+                      Add Supplier
+                    </Button>
+                  </DialogTrigger>
+                  <DialogPortal>
+                    <DialogOverlay />
+                    <DialogContent className="liquid-glass border-0">
+                      <AddSupplierForm 
+                        onSubmit={handleAddSupplier}
+                        onCancel={() => setIsAddSupplierDialogOpen(false)}
+                      />
+                    </DialogContent>
+                  </DialogPortal>
+                </Dialog>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="frosted-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
+          <div className="liquid-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
             <div className="flex items-center gap-4">
-              <div className="glass-card p-3 rounded-xl">
+              <div className="liquid-glass p-3 rounded-xl">
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
               <div>
@@ -219,9 +225,9 @@ export const SupplierDashboard = () => {
             </div>
           </div>
 
-          <div className="frosted-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
+          <div className="liquid-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
             <div className="flex items-center gap-4">
-              <div className="glass-card p-3 rounded-xl">
+              <div className="liquid-glass p-3 rounded-xl">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <div>
@@ -231,9 +237,9 @@ export const SupplierDashboard = () => {
             </div>
           </div>
 
-          <div className="frosted-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
+          <div className="liquid-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
             <div className="flex items-center gap-4">
-              <div className="glass-card p-3 rounded-xl">
+              <div className="liquid-glass p-3 rounded-xl">
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
               <div>
@@ -243,9 +249,9 @@ export const SupplierDashboard = () => {
             </div>
           </div>
 
-          <div className="frosted-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
+          <div className="liquid-glass p-6 rounded-2xl shadow-lg hover-glow smooth-transition">
             <div className="flex items-center gap-4">
-              <div className="glass-card p-3 rounded-xl">
+              <div className="liquid-glass p-3 rounded-xl">
                 <Star className="w-8 h-8 text-yellow-600" />
               </div>
               <div>
@@ -257,23 +263,23 @@ export const SupplierDashboard = () => {
         </div>
 
         {/* Navigation and Filters */}
-        <div className="frosted-glass p-6 rounded-2xl shadow-lg">
+        <div className="liquid-glass p-6 rounded-2xl shadow-lg">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:w-auto">
-              <TabsList className="glass-card p-1 h-auto">
-                <TabsTrigger value="suppliers" className="px-6 py-3 rounded-xl data-[state=active]:bg-white/20">
+              <TabsList className="liquid-glass p-1 h-auto">
+                <TabsTrigger value="suppliers" className="px-6 py-3 rounded-xl data-[state=active]:liquid-glass">
                   <Building2 className="w-4 h-4 mr-2" />
                   Suppliers
                 </TabsTrigger>
-                <TabsTrigger value="evaluation" className="px-6 py-3 rounded-xl data-[state=active]:bg-white/20">
+                <TabsTrigger value="evaluation" className="px-6 py-3 rounded-xl data-[state=active]:liquid-glass">
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Evaluation
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="px-6 py-3 rounded-xl data-[state=active]:bg-white/20">
+                <TabsTrigger value="analytics" className="px-6 py-3 rounded-xl data-[state=active]:liquid-glass">
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Analytics
                 </TabsTrigger>
-                <TabsTrigger value="criteria" className="px-6 py-3 rounded-xl data-[state=active]:bg-white/20">
+                <TabsTrigger value="criteria" className="px-6 py-3 rounded-xl data-[state=active]:liquid-glass">
                   <Settings className="w-4 h-4 mr-2" />
                   Criteria
                 </TabsTrigger>
@@ -293,7 +299,7 @@ export const SupplierDashboard = () => {
                   variant={viewMode === 'grid' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="glass-card border-0"
+                  className="liquid-glass border-0"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
@@ -301,7 +307,7 @@ export const SupplierDashboard = () => {
                   variant={viewMode === 'list' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="glass-card border-0"
+                  className="liquid-glass border-0"
                 >
                   <List className="w-4 h-4" />
                 </Button>
@@ -351,7 +357,7 @@ export const SupplierDashboard = () => {
                 <EvaluationAnalytics suppliers={suppliers} />
                 
                 {/* Top Performing Suppliers */}
-                <Card className="frosted-glass border-0 shadow-xl">
+                <Card className="liquid-glass border-0 shadow-xl">
                   <CardHeader>
                     <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                       <Trophy className="w-6 h-6 text-yellow-600" />
@@ -365,7 +371,7 @@ export const SupplierDashboard = () => {
                         .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
                         .slice(0, 5)
                         .map((supplier, index) => (
-                          <div key={supplier.id} className="flex items-center justify-between p-4 frosted-glass rounded-xl">
+                          <div key={supplier.id} className="flex items-center justify-between p-4 liquid-glass rounded-xl">
                             <div className="flex items-center gap-4">
                               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 flex items-center justify-center text-white font-bold">
                                 {index + 1}
