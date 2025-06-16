@@ -206,7 +206,8 @@ class ElevenLabsService {
     });
   }
 
-  private async processTextWithContext(text: string, context: string): Promise<string> {
+  // Make this method public instead of private
+  async processTextWithContext(text: string, context: string): Promise<string> {
     const lowerText = text.toLowerCase();
     
     // Parse context for specific data

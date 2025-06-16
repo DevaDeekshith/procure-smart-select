@@ -10,8 +10,12 @@ export interface Supplier {
   industry: string;
   establishedYear: number;
   certifications: string[];
-  status: 'active' | 'inactive' | 'pending';
-  overallScore?: number; // Add this optional property
+  status: 'active' | 'inactive' | 'pending' | 'rejected';
+  overallScore?: number;
+  scores?: Record<string, number>; // Add scores property
+  website?: string; // Add website property
+  contactEmail?: string; // Add contactEmail as alias
+  contactPhone?: string; // Add contactPhone as alias
   createdAt: Date;
   updatedAt: Date;
 }

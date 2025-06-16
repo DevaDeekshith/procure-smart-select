@@ -30,6 +30,7 @@ export const WebsiteContextProvider = ({
     // Calculate statistics
     const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
     const pendingSuppliers = suppliers.filter(s => s.status === 'pending').length;
+    const inactiveSuppliers = suppliers.filter(s => s.status === 'inactive').length;
     const rejectedSuppliers = suppliers.filter(s => s.status === 'rejected').length;
 
     // Calculate average scores

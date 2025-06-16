@@ -58,10 +58,10 @@ CURRENT STATUS:
 SUPPLIERS LIST:
 ${ctx.suppliers.map(supplier => `
 - ${supplier.name} (${supplier.industry}) - Status: ${supplier.status}
-  Contact: ${supplier.contactEmail}
-  Phone: ${supplier.contactPhone}
+  Contact: ${supplier.email}
+  Phone: ${supplier.phone}
   Address: ${supplier.address}
-  Website: ${supplier.website}
+  Website: ${supplier.website || 'Not provided'}
   Description: ${supplier.description}
 `).join('')}
 
