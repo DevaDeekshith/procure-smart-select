@@ -77,7 +77,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-card border-0" align="end">
+              <DropdownMenuContent className="glass-card border-0 bg-white shadow-lg z-50" align="end">
                 <DropdownMenuItem 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -153,7 +153,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
       </Card>
 
       <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
-        <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
+        <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto bg-white">
           <SheetHeader>
             <SheetTitle className="text-xl font-bold text-blue-900">Edit Supplier</SheetTitle>
           </SheetHeader>
