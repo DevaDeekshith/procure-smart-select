@@ -66,26 +66,33 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
-  html, body {
+  html {
     height: 100%;
+    width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
   }
 
   body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
     @apply bg-gradient-to-br from-blue-50 via-white to-blue-100 text-foreground;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
     min-height: 100vh;
-    width: 100%;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
   }
 }
 
@@ -137,22 +144,44 @@
     animation: fade-in 0.2s ease-out;
   }
 
-  /* Responsive utilities */
+  /* Improved Responsive Grid */
   .responsive-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
   }
 
-  @media (max-width: 768px) {
+  /* Tablet and desktop adjustments */
+  @media (min-width: 768px) {
     .responsive-grid {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .responsive-grid {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .responsive-grid {
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2.5rem;
     }
   }
 
   /* Mobile optimizations */
   @media (max-width: 640px) {
+    .responsive-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
     .glass-card, .frosted-glass {
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
