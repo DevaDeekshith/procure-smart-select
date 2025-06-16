@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -142,8 +141,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const startRecording = () => {
     if (!mediaRecorder || isProcessing || isRecordingRef.current) return;
 
     console.log('Starting recording...');
@@ -163,11 +161,11 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     }
 
     recordingTimeoutRef.current = setTimeout(() => {
-      handleMouseUp();
+      stopRecording();
     }, 30000); // Maximum 30 seconds
   };
 
-  const handleMouseUp = () => {
+  const stopRecording = () => {
     if (!mediaRecorder || !isRecordingRef.current) return;
 
     console.log('Stopping recording...');
@@ -186,6 +184,24 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     } catch (error) {
       console.error('Error stopping recording:', error);
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    startRecording();
+  };
+
+  const handleMouseUp = () => {
+    stopRecording();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    startRecording();
+  };
+
+  const handleTouchEnd = () => {
+    stopRecording();
   };
 
   const testVoiceCommand = async () => {
@@ -261,8 +277,8 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchEnd={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             disabled={isProcessing}
             className={`w-20 h-20 rounded-full shadow-2xl smooth-transition relative overflow-hidden select-none cursor-pointer ${
               isRecording
