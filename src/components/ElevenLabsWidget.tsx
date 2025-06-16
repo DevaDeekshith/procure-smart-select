@@ -7,27 +7,20 @@ interface ElevenLabsWidgetProps {
 
 export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" }: ElevenLabsWidgetProps) => {
   useEffect(() => {
-    // Ensure the widget is properly initialized after component mount
-    const initWidget = () => {
-      const widget = document.querySelector('elevenlabs-convai');
-      if (widget) {
-        widget.setAttribute('agent-id', agentId);
-      }
-    };
-
-    // Initialize after a small delay to ensure the script is loaded
-    const timeout = setTimeout(initWidget, 1000);
-    
-    return () => clearTimeout(timeout);
-  }, [agentId]);
+    // Load the script dynamically if not already loaded
+    if (!document.querySelector('script[src="https://unpkg.com/@elevenlabs/convai-widget-embed"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+      script.async = true;
+      script.type = 'text/javascript';
+      document.head.appendChild(script);
+    }
+  }, []);
 
   return (
     <div className="fixed top-20 right-6 z-50">
-      <div className="w-80 liquid-glass p-3 rounded-xl shadow-lg hover-glow smooth-transition">
-        {/* ElevenLabs Conversational AI Widget */}
-        <div className="widget-container overflow-hidden rounded-lg">
-          <elevenlabs-convai agent-id={agentId}></elevenlabs-convai>
-        </div>
+      <div className="liquid-glass p-3 rounded-xl shadow-lg hover-glow smooth-transition">
+        <elevenlabs-convai agent-id={agentId}></elevenlabs-convai>
       </div>
     </div>
   );
