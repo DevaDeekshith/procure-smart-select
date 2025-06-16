@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Upload } from "lucide-react";
@@ -93,11 +92,7 @@ export const EditSupplierForm = ({ supplier, onSubmit, onCancel }: EditSupplierF
   };
 
   return (
-    <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
-      <SheetHeader>
-        <SheetTitle className="text-xl font-bold text-blue-900">Edit Supplier</SheetTitle>
-      </SheetHeader>
-      
+    <>
       <div className="space-y-6 py-4">
         {/* Basic Information */}
         <div className="space-y-4">
@@ -260,14 +255,14 @@ export const EditSupplierForm = ({ supplier, onSubmit, onCancel }: EditSupplierF
         </div>
       </div>
 
-      <SheetFooter className="gap-2">
+      <div className="flex gap-2 justify-end pt-4 border-t">
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
           Update Supplier
         </Button>
-      </SheetFooter>
-    </SheetContent>
+      </div>
+    </>
   );
 };
