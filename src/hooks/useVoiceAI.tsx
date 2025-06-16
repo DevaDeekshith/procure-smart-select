@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { elevenLabsService } from '@/services/elevenLabsService';
 
 export interface VoiceCommand {
   intent: string;
@@ -25,59 +26,84 @@ export const useVoiceAI = () => {
     console.log('Processing voice command:', command);
     
     try {
+      let response: VoiceResponse;
+      
       switch (command.intent) {
         case 'add_supplier':
-          return {
+          response = {
             message: `Adding supplier ${command.entities.supplierName || 'new supplier'}...`,
             action: 'add_supplier',
             data: command.entities
           };
+          break;
         
         case 'edit_supplier':
-          return {
+          response = {
             message: `Editing supplier ${command.entities.supplierName || command.entities.supplierId}...`,
             action: 'edit_supplier',
             data: command.entities
           };
+          break;
         
         case 'delete_supplier':
-          return {
+          response = {
             message: `Deleting supplier ${command.entities.supplierName || command.entities.supplierId}...`,
             action: 'delete_supplier',
             data: command.entities
           };
+          break;
         
         case 'score_supplier':
-          return {
+          response = {
             message: `Adding score ${command.entities.score} for ${command.entities.criteria} to supplier ${command.entities.supplierName}...`,
             action: 'score_supplier',
             data: command.entities
           };
+          break;
         
         case 'generate_report':
-          return {
+          response = {
             message: `Generating ${command.entities.reportType || 'supplier'} report...`,
             action: 'generate_report',
             data: command.entities
           };
+          break;
         
         case 'navigate':
-          return {
+          response = {
             message: `Navigating to ${command.entities.view || command.entities.section}...`,
             action: 'navigate',
             data: command.entities
           };
+          break;
         
         default:
-          return {
+          response = {
             message: `I understand you said "${command.rawText}" but I'm not sure how to help with that. Try commands like "add supplier", "score supplier", or "generate report".`
           };
       }
+
+      // Speak the response using Eleven Labs
+      try {
+        await elevenLabsService.speakResponse(response.message, command.language);
+      } catch (error) {
+        console.error('Error speaking response:', error);
+      }
+
+      return response;
     } catch (error) {
       console.error('Error processing voice command:', error);
-      return {
+      const errorResponse = {
         message: 'Sorry, I encountered an error processing your command. Please try again.'
       };
+      
+      try {
+        await elevenLabsService.speakResponse(errorResponse.message, command.language);
+      } catch (speakError) {
+        console.error('Error speaking error response:', speakError);
+      }
+      
+      return errorResponse;
     }
   }, []);
 
@@ -119,7 +145,7 @@ export const useVoiceAI = () => {
     }
   }, [processVoiceCommand, toast]);
 
-  const toggleListening = useCallback(() => {
+  const toggleListening = useCallback(async () => {
     setIsListening(prev => !prev);
     
     if (!isListening) {
@@ -127,11 +153,25 @@ export const useVoiceAI = () => {
         title: "Voice Assistant Activated",
         description: "Listening for voice commands in multiple languages...",
       });
+      
+      // Speak activation message
+      try {
+        await elevenLabsService.speakResponse("Voice assistant activated. How can I help you?");
+      } catch (error) {
+        console.error('Error speaking activation message:', error);
+      }
     } else {
       toast({
         title: "Voice Assistant Deactivated",
         description: "Voice commands are now disabled.",
       });
+      
+      // Speak deactivation message
+      try {
+        await elevenLabsService.speakResponse("Voice assistant deactivated.");
+      } catch (error) {
+        console.error('Error speaking deactivation message:', error);
+      }
     }
   }, [isListening, toast]);
 
