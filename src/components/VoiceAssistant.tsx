@@ -15,9 +15,9 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   const { isProcessing, handleWebhookCommand } = useVoiceAI();
   const [lastCommand, setLastCommand] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
   const [isSupported, setIsSupported] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   
   const [supportedLanguages] = useState([
     { code: 'en', name: 'English' },
@@ -35,7 +35,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     
     if (SpeechRecognition) {
       setIsSupported(true);
-      const recognitionInstance = new SpeechRecognition() as SpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
       
       // Configure speech recognition
       recognitionInstance.continuous = false;
@@ -44,7 +44,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       recognitionInstance.maxAlternatives = 1;
       
       // Handle results
-      recognitionInstance.onresult = (event) => {
+      recognitionInstance.onresult = (event: any) => {
         console.log('Speech recognition result:', event);
         const transcript = event.results[0][0].transcript;
         console.log('Transcript:', transcript);
@@ -56,7 +56,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       };
       
       // Handle errors
-      recognitionInstance.onerror = (event) => {
+      recognitionInstance.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };
