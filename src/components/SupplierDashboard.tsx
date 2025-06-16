@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy } from 'lucide-react';
 import { SupplierCard } from '@/components/SupplierCard';
@@ -20,7 +19,7 @@ export const SupplierDashboard = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [activeTab, setActiveTab] = useState("suppliers");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filters, setFilters] = useState<{ [key: string]: string }>({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     // Fetch suppliers from API or use dummy data
@@ -115,21 +114,10 @@ export const SupplierDashboard = () => {
   }, []);
 
   const filteredSuppliers = suppliers.filter((supplier) => {
-    return Object.keys(filters).every((key) => {
-      if (!filters[key]) return true; // Skip empty filters
-      const filterValue = filters[key].toLowerCase();
-
-      if (key === 'name') {
-        return supplier.name.toLowerCase().includes(filterValue);
-      }
-      if (key === 'industry') {
-        return supplier.industry.toLowerCase().includes(filterValue);
-      }
-      if (key === 'status') {
-        return supplier.status.toLowerCase().includes(filterValue);
-      }
-      return true;
-    });
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return supplier.name.toLowerCase().includes(searchLower) ||
+           supplier.industry.toLowerCase().includes(searchLower);
   });
 
   const activeSuppliers = suppliers.filter((supplier) => supplier.status === 'active').length;
@@ -159,8 +147,8 @@ export const SupplierDashboard = () => {
     setSuppliers(prev => prev.filter(s => s.id !== supplierId));
   };
 
-  const handleFilterChange = (newFilters: { [key: string]: string }) => {
-    setFilters(newFilters);
+  const handleSearchChange = (searchValue: string) => {
+    setSearchTerm(searchValue);
   };
 
   return (
@@ -270,7 +258,12 @@ export const SupplierDashboard = () => {
             </Tabs>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
-              <AdvancedSearch onApplyFilters={handleFilterChange} />
+              <AdvancedSearch 
+                suppliers={suppliers}
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                onSupplierSelect={handleSupplierSelect}
+              />
               
               <div className="flex items-center gap-3">
                 <Button
@@ -295,7 +288,7 @@ export const SupplierDashboard = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsContent value="suppliers" className="space-y-6">
             {viewMode === 'grid' ? (
               <div className="responsive-supplier-grid">
@@ -374,7 +367,7 @@ export const SupplierDashboard = () => {
           <TabsContent value="criteria" className="space-y-6">
             <CriteriaWeights />
           </TabsContent>
-        </div>
+        </Tabs>
       </div>
 
       {/* ElevenLabs Widget */}
