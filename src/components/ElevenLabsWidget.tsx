@@ -23,9 +23,9 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
 
   return (
     <div className="fixed top-20 right-6 z-50">
-      <div className="w-80 max-w-sm liquid-glass p-4 rounded-2xl shadow-2xl hover-glow smooth-transition">
+      <div className="liquid-glass p-2 rounded-xl shadow-lg hover-glow smooth-transition">
         {/* ElevenLabs Conversational AI Widget */}
-        <div className="widget-container overflow-hidden rounded-xl">
+        <div className="widget-container overflow-hidden rounded-lg">
           <elevenlabs-convai agent-id={agentId}></elevenlabs-convai>
         </div>
       </div>
