@@ -19,6 +19,8 @@ interface SupplierCardProps {
 export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  console.log('SupplierCard rendering, isEditDialogOpen:', isEditDialogOpen);
+
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -46,7 +48,10 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                   variant="ghost" 
                   size="sm" 
                   className="glass-card w-8 h-8 p-0 hover:bg-white/20"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('More menu clicked');
+                  }}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>
@@ -55,6 +60,7 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
                 <DropdownMenuItem 
                   onClick={(e) => {
                     e.stopPropagation();
+                    console.log('Edit clicked, opening sheet');
                     setIsEditDialogOpen(true);
                   }}
                   className="hover:bg-white/20"
@@ -130,14 +136,20 @@ export const SupplierCard = ({ supplier, onEdit, onDelete, onClick }: SupplierCa
       </Card>
 
       <Sheet open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <EditSupplierForm
-          supplier={supplier}
-          onSubmit={(updatedSupplier) => {
-            onEdit(updatedSupplier);
-            setIsEditDialogOpen(false);
-          }}
-          onCancel={() => setIsEditDialogOpen(false)}
-        />
+        {isEditDialogOpen && (
+          <EditSupplierForm
+            supplier={supplier}
+            onSubmit={(updatedSupplier) => {
+              console.log('Supplier updated, closing sheet');
+              onEdit(updatedSupplier);
+              setIsEditDialogOpen(false);
+            }}
+            onCancel={() => {
+              console.log('Edit cancelled, closing sheet');
+              setIsEditDialogOpen(false);
+            }}
+          />
+        )}
       </Sheet>
     </>
   );
