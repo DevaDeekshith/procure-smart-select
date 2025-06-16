@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useVoiceAI, VoiceResponse } from '@/hooks/useVoiceAI';
 import { voiceWebhookService, WebhookResponse } from '@/services/voiceWebhookService';
-import { speechToTextService } from '@/services/speechToTextService';
 import { Mic, MicOff, Volume2, Loader2 } from 'lucide-react';
 
 interface VoiceAssistantProps {
@@ -16,12 +15,10 @@ interface VoiceAssistantProps {
 export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   const { isProcessing, handleWebhookCommand } = useVoiceAI();
   const [lastCommand, setLastCommand] = useState<string>('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const isRecordingRef = useRef(false);
-  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   const [supportedLanguages] = useState([
     { code: 'en', name: 'English' },
@@ -34,65 +31,55 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
   ]);
 
   useEffect(() => {
-    const initializeMediaRecorder = async () => {
-      try {
-        console.log('Requesting microphone access...');
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 44100
-          } 
-        });
+    // Check if Speech Recognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      setIsSupported(true);
+      const recognitionInstance = new SpeechRecognition();
+      
+      // Configure speech recognition
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+      recognitionInstance.maxAlternatives = 1;
+      
+      // Handle results
+      recognitionInstance.onresult = (event) => {
+        console.log('Speech recognition result:', event);
+        const transcript = event.results[0][0].transcript;
+        console.log('Transcript:', transcript);
         
-        setStream(mediaStream);
-        
-        // Try different MIME types for better compatibility
-        let mimeType = 'audio/webm;codecs=opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = 'audio/webm';
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-            mimeType = 'audio/mp4';
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-              mimeType = '';
-            }
-          }
+        if (transcript && transcript.trim()) {
+          setLastCommand(transcript);
+          processTranscript(transcript);
         }
-        
-        const recorder = new MediaRecorder(mediaStream, {
-          mimeType: mimeType || undefined
-        });
-        
-        recorder.ondataavailable = (event) => {
-          console.log('Audio data available:', event.data.size);
-          if (event.data && event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
-
-        recorder.onstop = () => {
-          console.log('MediaRecorder stopped, processing audio...');
-          processRecordedAudio();
-        };
-
-        recorder.onstart = () => {
-          console.log('MediaRecorder started');
-          audioChunksRef.current = [];
-        };
-
-        recorder.onerror = (event) => {
-          console.error('MediaRecorder error:', event);
-        };
-
-        setMediaRecorder(recorder);
-        console.log('MediaRecorder initialized successfully with mimeType:', mimeType);
-      } catch (error) {
-        console.error('Error accessing microphone:', error);
-      }
-    };
-
-    initializeMediaRecorder();
+      };
+      
+      // Handle errors
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+      
+      // Handle end
+      recognitionInstance.onend = () => {
+        console.log('Speech recognition ended');
+        setIsListening(false);
+      };
+      
+      // Handle start
+      recognitionInstance.onstart = () => {
+        console.log('Speech recognition started');
+        setIsListening(true);
+      };
+      
+      setRecognition(recognitionInstance);
+      recognitionRef.current = recognitionInstance;
+    } else {
+      console.warn('Speech Recognition not supported in this browser');
+      setIsSupported(false);
+    }
 
     // Set up webhook handler
     voiceWebhookService.setCommandHandler(async (payload): Promise<WebhookResponse> => {
@@ -116,144 +103,59 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     });
 
     return () => {
-      if (recordingTimeoutRef.current) {
-        clearTimeout(recordingTimeoutRef.current);
-      }
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
       }
     };
   }, [handleWebhookCommand, onCommand]);
 
-  const processRecordedAudio = async () => {
-    console.log('Processing recorded audio, chunks:', audioChunksRef.current.length);
-    
-    if (audioChunksRef.current.length === 0) {
-      console.log('No audio chunks to process');
-      return;
-    }
-
+  const processTranscript = async (transcript: string) => {
     try {
-      const audioBlob = new Blob(audioChunksRef.current, { 
-        type: audioChunksRef.current[0]?.type || 'audio/webm'
-      });
-      console.log('Audio blob created:', audioBlob.size, 'bytes', 'type:', audioBlob.type);
-
-      if (audioBlob.size === 0) {
-        console.log('Audio blob is empty');
-        return;
-      }
-
-      const transcriptionResult = await speechToTextService.transcribeAudio(audioBlob);
-      
-      if (transcriptionResult && transcriptionResult.text) {
-        console.log('Transcribed text:', transcriptionResult.text);
-        setLastCommand(transcriptionResult.text);
-        
-        await voiceWebhookService.simulateWebhook(transcriptionResult.text, transcriptionResult.language || 'en');
-      } else {
-        console.log('No transcription result');
-      }
-
-      audioChunksRef.current = [];
+      console.log('Processing transcript:', transcript);
+      await voiceWebhookService.simulateWebhook(transcript, 'en');
     } catch (error) {
-      console.error('Error processing recorded audio:', error);
+      console.error('Error processing transcript:', error);
     }
   };
 
-  const startRecording = () => {
-    if (!mediaRecorder || isProcessing || isRecordingRef.current) {
-      console.log('Cannot start recording:', { 
-        hasRecorder: !!mediaRecorder, 
+  const startListening = () => {
+    if (!recognition || isProcessing || isListening) {
+      console.log('Cannot start listening:', { 
+        hasRecognition: !!recognition, 
         isProcessing, 
-        isAlreadyRecording: isRecordingRef.current 
+        isListening 
       });
       return;
     }
 
-    console.log('Starting recording...');
-    setIsRecording(true);
-    isRecordingRef.current = true;
-    audioChunksRef.current = [];
-    
     try {
-      if (mediaRecorder.state === 'inactive') {
-        // Start recording with time slices for better data collection
-        mediaRecorder.start(250); // Collect data every 250ms
-        console.log('MediaRecorder started with state:', mediaRecorder.state);
-      }
+      console.log('Starting speech recognition...');
+      recognition.start();
     } catch (error) {
-      console.error('Error starting recording:', error);
-      setIsRecording(false);
-      isRecordingRef.current = false;
+      console.error('Error starting speech recognition:', error);
+      setIsListening(false);
+    }
+  };
+
+  const stopListening = () => {
+    if (!recognition || !isListening) {
       return;
     }
 
-    // Set maximum recording time
-    recordingTimeoutRef.current = setTimeout(() => {
-      console.log('Recording timeout reached');
-      stopRecording();
-    }, 10000); // Maximum 10 seconds
-  };
-
-  const stopRecording = () => {
-    if (!mediaRecorder || !isRecordingRef.current) {
-      console.log('Cannot stop recording:', { 
-        hasRecorder: !!mediaRecorder, 
-        isRecording: isRecordingRef.current 
-      });
-      return;
-    }
-
-    console.log('Stopping recording...');
-    setIsRecording(false);
-    isRecordingRef.current = false;
-
-    if (recordingTimeoutRef.current) {
-      clearTimeout(recordingTimeoutRef.current);
-      recordingTimeoutRef.current = null;
-    }
-
     try {
-      if (mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        console.log('MediaRecorder stopped, state:', mediaRecorder.state);
-      }
+      console.log('Stopping speech recognition...');
+      recognition.stop();
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error('Error stopping speech recognition:', error);
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    startRecording();
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    stopRecording();
-  };
-
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isRecordingRef.current) {
-      stopRecording();
+  const handleClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    startRecording();
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    stopRecording();
   };
 
   const testVoiceCommand = async () => {
@@ -269,23 +171,42 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
     await voiceWebhookService.simulateWebhook(randomCommand);
   };
 
+  if (!isSupported) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50">
+        <Card className="frosted-glass border-0 w-80">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <div className="text-sm font-semibold text-red-600 mb-2">
+                Speech Recognition Not Supported
+              </div>
+              <div className="text-xs text-gray-600">
+                Your browser doesn't support speech recognition. Please try Chrome, Edge, or Safari.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50 space-y-4">
-      {(isRecording || isProcessing) && (
+      {(isListening || isProcessing) && (
         <Card className="frosted-glass border-0 animate-fade-in w-80">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-2 h-2 rounded-full animate-pulse ${
-                isRecording ? 'bg-red-500' : 'bg-blue-500'
+                isListening ? 'bg-red-500' : 'bg-blue-500'
               }`}></div>
               <div className="text-sm font-semibold text-gray-700">
-                {isRecording ? 'Jarvis is Listening...' : 'Processing Your Request...'}
+                {isListening ? 'Jarvis is Listening...' : 'Processing Your Request...'}
               </div>
             </div>
             
-            {isRecording && (
+            {isListening && (
               <div className="text-xs text-gray-600 mb-2">
-                Hold the button and speak clearly. Release when done.
+                Speak clearly. Click the button again to stop listening.
               </div>
             )}
 
@@ -326,37 +247,28 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            onClick={handleClick}
             disabled={isProcessing}
-            style={{ 
-              userSelect: 'none', 
-              touchAction: 'none',
-              WebkitUserSelect: 'none'
-            }}
-            className={`w-20 h-20 rounded-full shadow-2xl smooth-transition relative overflow-hidden select-none cursor-pointer touch-none ${
-              isRecording
-                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse hover-glow border-2 border-red-400' 
+            className={`w-20 h-20 rounded-full shadow-2xl transition-all duration-200 relative overflow-hidden ${
+              isListening
+                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse border-2 border-red-400' 
                 : isProcessing
-                ? 'bg-blue-600 hover:bg-blue-700 text-white hover-glow border-2 border-blue-400'
-                : 'bg-black hover:bg-gray-800 text-white hover-glow border-2 border-gray-300'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-400'
+                : 'bg-black hover:bg-gray-800 text-white border-2 border-gray-300'
             }`}
           >
             {isProcessing ? (
               <Loader2 className="w-8 h-8 animate-spin" />
-            ) : isRecording ? (
-              <Mic className="w-8 h-8 animate-pulse" />
+            ) : isListening ? (
+              <Mic className="w-8 h-8" />
             ) : (
               <MicOff className="w-8 h-8" />
             )}
             
-            {isRecording && (
+            {isListening && (
               <>
                 <div className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"></div>
-                <div className="absolute inset-2 rounded-full border-2 border-red-300 animate-ping opacity-20 animation-delay-300"></div>
+                <div className="absolute inset-2 rounded-full border-2 border-red-300 animate-ping opacity-20"></div>
               </>
             )}
           </Button>
@@ -364,20 +276,20 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
         <TooltipContent side="left" className="glass-card border-0 max-w-xs">
           <div className="space-y-2">
             <p className="font-medium">
-              {isRecording ? 'Recording... Release to Send' : 'Hold to Talk to Jarvis'}
+              {isListening ? 'Listening... Click to Stop' : 'Click to Talk to Jarvis'}
             </p>
             <p className="text-xs text-gray-600">
-              {isRecording 
-                ? 'Speak clearly and release when done' 
-                : 'Press and hold to record your voice command'
+              {isListening 
+                ? 'Speak your command clearly' 
+                : 'Click to start voice recognition'
               }
             </p>
             <div className="pt-1 border-t border-gray-200">
               <p className="text-xs text-blue-600 font-medium">Instructions:</p>
               <ul className="text-xs text-gray-500 space-y-1">
-                <li>• Hold button down to start recording</li>
+                <li>• Click button to start listening</li>
                 <li>• Speak your command clearly</li>
-                <li>• Release button to send to Jarvis</li>
+                <li>• Click again to stop and process</li>
                 <li>• Wait for Jarvis to respond</li>
               </ul>
             </div>
@@ -392,7 +304,7 @@ export const VoiceAssistant = ({ onCommand }: VoiceAssistantProps) => {
               onClick={testVoiceCommand}
               variant="outline"
               size="sm"
-              className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600 hover-glow"
+              className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
             >
               <Volume2 className="w-4 h-4" />
             </Button>

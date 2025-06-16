@@ -3,6 +3,7 @@ interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  maxAlternatives: number;
   start(): void;
   stop(): void;
   abort(): void;
@@ -35,22 +36,14 @@ interface SpeechRecognitionAlternative {
   confidence: number;
 }
 
-interface SpeechRecognitionErrorEvent extends Event {
+interface SpeechRecognitionErrorEvent {
   error: string;
   message: string;
 }
 
-interface Window {
-  SpeechRecognition: typeof SpeechRecognition;
-  webkitSpeechRecognition: typeof SpeechRecognition;
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
 }
-
-declare var SpeechRecognition: {
-  prototype: SpeechRecognition;
-  new(): SpeechRecognition;
-};
-
-declare var webkitSpeechRecognition: {
-  prototype: SpeechRecognition;
-  new(): SpeechRecognition;
-};
