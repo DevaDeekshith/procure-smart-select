@@ -11,6 +11,7 @@ export interface Supplier {
   establishedYear: number;
   certifications: string[];
   status: 'active' | 'inactive' | 'pending';
+  overallScore?: number; // Add this optional property
   createdAt: Date;
   updatedAt: Date;
 }
