@@ -1,15 +1,13 @@
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, FileText, Users, TrendingUp, AlertTriangle } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { Supplier } from "@/types/supplier";
-
-interface AdvancedAnalyticsProps {
-  suppliers: Supplier[];
-}
+import { useQuery } from "@tanstack/react-query";
+import { supplierService } from "@/services/supplierService";
 
 const SCORING_SCALE = {
   EXCELLENT: { label: 'Excellent', minScore: 90 },
@@ -19,72 +17,43 @@ const SCORING_SCALE = {
   POOR: { label: 'Poor', minScore: 0 },
 };
 
-export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) => {
-  const [timeframe, setTimeframe] = useState("last_quarter");
-
-  // Mock supplier scores (replace with actual data)
-  const suppliersWithScores = useMemo(() => {
-    if (!suppliers || suppliers.length === 0) return [];
-    
-    return suppliers.map(supplier => {
-      const totalScore = Math.floor(Math.random() * 100); // Generate a random score between 0 and 99
-      return { ...supplier, totalScore };
-    });
-  }, [suppliers]);
-
-  // Time-based data filtering (mock)
-  const filteredSuppliers = useMemo(() => {
-    if (!suppliersWithScores || suppliersWithScores.length === 0) return [];
-
-    // Mock date filtering logic
-    const now = new Date();
-    let startDate;
-
-    switch (timeframe) {
-      case "last_month":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        break;
-      case "last_quarter":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-        break;
-      case "last_year":
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-        break;
-      default:
-        return suppliersWithScores;
-    }
-
-    return suppliersWithScores.filter(supplier => {
-      const supplierDate = new Date(supplier.createdAt);
-      return supplierDate >= startDate;
-    });
-  }, [timeframe, suppliersWithScores]);
+export const AdvancedAnalytics = () => {
+  // Fetch suppliers from Supabase
+  const { data: suppliers = [], isLoading } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: supplierService.getAllSuppliers,
+  });
 
   // Performance distribution data
-  const performanceDistribution = Object.entries(SCORING_SCALE).map(([key, scale]) => {
-    const count = suppliersWithScores.filter((supplier) => {
-      if (key === 'EXCELLENT') return supplier.totalScore >= 90;
-      if (key === 'GOOD') return supplier.totalScore >= 75 && supplier.totalScore < 90;
-      if (key === 'SATISFACTORY') return supplier.totalScore >= 60 && supplier.totalScore < 75;
-      if (key === 'NEEDS_IMPROVEMENT') return supplier.totalScore >= 40 && supplier.totalScore < 60;
-      if (key === 'POOR') return supplier.totalScore < 40;
-      return false;
-    }).length;
+  const performanceDistribution = useMemo(() => {
+    if (!suppliers.length) return [];
     
-    return {
-      name: scale.label,
-      count: count,
-      percentage: suppliersWithScores.length > 0 ? (count / suppliersWithScores.length * 100) : 0,
-      fill: key === 'EXCELLENT' ? '#10B981' : 
-            key === 'GOOD' ? '#3B82F6' : 
-            key === 'SATISFACTORY' ? '#F59E0B' : 
-            key === 'NEEDS_IMPROVEMENT' ? '#EF4444' : '#8B5CF6'
-    };
-  }).filter(item => item.count > 0); // Only show categories with data
+    return Object.entries(SCORING_SCALE).map(([key, scale]) => {
+      const count = suppliers.filter((supplier) => {
+        const score = supplier.overallScore || 0;
+        if (key === 'EXCELLENT') return score >= 90;
+        if (key === 'GOOD') return score >= 75 && score < 90;
+        if (key === 'SATISFACTORY') return score >= 60 && score < 75;
+        if (key === 'NEEDS_IMPROVEMENT') return score >= 40 && score < 60;
+        if (key === 'POOR') return score < 40;
+        return false;
+      }).length;
+      
+      return {
+        name: scale.label,
+        count: count,
+        percentage: suppliers.length > 0 ? (count / suppliers.length * 100) : 0,
+        fill: key === 'EXCELLENT' ? '#10B981' : 
+              key === 'GOOD' ? '#3B82F6' : 
+              key === 'SATISFACTORY' ? '#F59E0B' : 
+              key === 'NEEDS_IMPROVEMENT' ? '#EF4444' : '#8B5CF6'
+      };
+    }).filter(item => item.count > 0);
+  }, [suppliers]);
 
-  // Mock risk distribution data
+  // Risk distribution data
   const riskDistribution = useMemo(() => {
-    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+    if (!suppliers.length) {
       return [
         { name: "High Risk", value: 0, percentage: 0, fill: '#EF4444' },
         { name: "Medium Risk", value: 0, percentage: 0, fill: '#F59E0B' },
@@ -92,40 +61,40 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
       ];
     }
 
-    const highRisk = filteredSuppliers.filter(s => s.totalScore < 50).length;
-    const mediumRisk = filteredSuppliers.filter(s => s.totalScore >= 50 && s.totalScore < 75).length;
-    const lowRisk = filteredSuppliers.filter(s => s.totalScore >= 75).length;
-
-    const total = filteredSuppliers.length;
+    const highRisk = suppliers.filter(s => (s.overallScore || 0) < 50).length;
+    const mediumRisk = suppliers.filter(s => {
+      const score = s.overallScore || 0;
+      return score >= 50 && score < 75;
+    }).length;
+    const lowRisk = suppliers.filter(s => (s.overallScore || 0) >= 75).length;
 
     return [
-      { name: "High Risk", value: highRisk, percentage: total > 0 ? (highRisk / total) * 100 : 0, fill: '#EF4444' },
-      { name: "Medium Risk", value: mediumRisk, percentage: total > 0 ? (mediumRisk / total) * 100 : 0, fill: '#F59E0B' },
-      { name: "Low Risk", value: lowRisk, percentage: total > 0 ? (lowRisk / total) * 100 : 0, fill: '#10B981' },
+      { name: "High Risk", value: highRisk, percentage: (highRisk / suppliers.length) * 100, fill: '#EF4444' },
+      { name: "Medium Risk", value: mediumRisk, percentage: (mediumRisk / suppliers.length) * 100, fill: '#F59E0B' },
+      { name: "Low Risk", value: lowRisk, percentage: (lowRisk / suppliers.length) * 100, fill: '#10B981' },
     ];
-  }, [filteredSuppliers]);
+  }, [suppliers]);
 
-  // Mock compliance status data
+  // Compliance status data
   const complianceData = useMemo(() => {
-    if (!filteredSuppliers || filteredSuppliers.length === 0) {
+    if (!suppliers.length) {
       return [
         { name: "Compliant", value: 0, percentage: 0, fill: '#3B82F6' },
         { name: "Non-Compliant", value: 0, percentage: 0, fill: '#9CA3AF' },
       ];
     }
 
-    const compliant = filteredSuppliers.filter(s => s.totalScore > 60).length;
-    const nonCompliant = filteredSuppliers.length - compliant;
-    const total = filteredSuppliers.length;
+    const compliant = suppliers.filter(s => (s.overallScore || 0) > 60).length;
+    const nonCompliant = suppliers.length - compliant;
 
     return [
-      { name: "Compliant", value: compliant, percentage: total > 0 ? (compliant / total) * 100 : 0, fill: '#3B82F6' },
-      { name: "Non-Compliant", value: nonCompliant, percentage: total > 0 ? (nonCompliant / total) * 100 : 0, fill: '#9CA3AF' },
+      { name: "Compliant", value: compliant, percentage: (compliant / suppliers.length) * 100, fill: '#3B82F6' },
+      { name: "Non-Compliant", value: nonCompliant, percentage: (nonCompliant / suppliers.length) * 100, fill: '#9CA3AF' },
     ];
-  }, [filteredSuppliers]);
+  }, [suppliers]);
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
-    if (percent < 0.05) return null; // Don't show labels for very small slices
+    if (percent < 0.05) return null;
     
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -148,8 +117,17 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
     );
   };
 
-  // Show message if no suppliers
-  if (!suppliers || suppliers.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card className="frosted-glass border-0 p-12 text-center">
+          <div className="text-lg">Loading analytics data...</div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!suppliers.length) {
     return (
       <div className="space-y-6">
         <Card className="frosted-glass border-0 p-12 text-center">
@@ -169,17 +147,6 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
             <FileText className="w-6 h-6 text-purple-500" />
             Advanced Analytics
           </CardTitle>
-          <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger className="w-[180px] h-10 glass-input border-0">
-              <SelectValue placeholder="Select Timeframe" />
-            </SelectTrigger>
-            <SelectContent className="glass-card border-0">
-              <SelectItem value="last_month">Last Month</SelectItem>
-              <SelectItem value="last_quarter">Last Quarter</SelectItem>
-              <SelectItem value="last_year">Last Year</SelectItem>
-              <SelectItem value="all_time">All Time</SelectItem>
-            </SelectContent>
-          </Select>
         </CardHeader>
       </Card>
 
@@ -200,7 +167,7 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
         {/* Performance Trends */}
         <TabsContent value="performance" className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Performance Distribution - Enhanced */}
+            {/* Performance Distribution */}
             <Card className="frosted-glass border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -242,7 +209,7 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                               backdropFilter: 'blur(20px)'
                             }}
                             formatter={(value, name) => [
-                              `${value} suppliers (${((value as number) / suppliersWithScores.length * 100).toFixed(1)}%)`,
+                              `${value} suppliers (${((value as number) / suppliers.length * 100).toFixed(1)}%)`,
                               'Count'
                             ]}
                           />
@@ -258,7 +225,6 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    {/* Performance Summary */}
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       {performanceDistribution.map((item, index) => (
                         <div key={index} className="glass-card p-3 rounded-lg">
@@ -295,26 +261,20 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {filteredSuppliers.length > 0 ? (
-                  <ul className="space-y-3">
-                    {filteredSuppliers
-                      .sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0))
-                      .slice(0, 5)
-                      .map((supplier) => (
-                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">{supplier.name}</p>
-                            <p className="text-sm text-gray-600">{supplier.industry}</p>
-                          </div>
-                          <div className="font-bold text-xl text-green-600">{supplier.totalScore}%</div>
-                        </li>
-                      ))}
-                  </ul>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No suppliers to display</p>
-                  </div>
-                )}
+                <ul className="space-y-3">
+                  {suppliers
+                    .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-green-600">{(supplier.overallScore || 0).toFixed(1)}</div>
+                      </li>
+                    ))}
+                </ul>
               </CardContent>
             </Card>
           </div>
@@ -360,7 +320,7 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                           backdropFilter: 'blur(20px)'
                         }}
                         formatter={(value, name) => [
-                          `${value} suppliers (${filteredSuppliers.length > 0 ? ((value as number) / filteredSuppliers.length * 100).toFixed(1) : 0}%)`,
+                          `${value} suppliers (${suppliers.length > 0 ? ((value as number) / suppliers.length * 100).toFixed(1) : 0}%)`,
                           'Count'
                         ]}
                       />
@@ -376,7 +336,6 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Risk Summary */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {riskDistribution.map((item, index) => (
                     <div key={index} className="glass-card p-3 rounded-lg">
@@ -407,23 +366,22 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {filteredSuppliers.length > 0 ? (
-                  <ul className="space-y-3">
-                    {filteredSuppliers
-                      .filter(s => s.totalScore < 50)
-                      .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
-                      .slice(0, 5)
-                      .map((supplier) => (
-                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">{supplier.name}</p>
-                            <p className="text-sm text-gray-600">{supplier.industry}</p>
-                          </div>
-                          <div className="font-bold text-xl text-red-600">{supplier.totalScore}%</div>
-                        </li>
-                      ))}
-                  </ul>
-                ) : (
+                <ul className="space-y-3">
+                  {suppliers
+                    .filter(s => (s.overallScore || 0) < 50)
+                    .sort((a, b) => (a.overallScore || 0) - (b.overallScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-red-600">{(supplier.overallScore || 0).toFixed(1)}</div>
+                      </li>
+                    ))}
+                </ul>
+                {suppliers.filter(s => (s.overallScore || 0) < 50).length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No high-risk suppliers found</p>
                   </div>
@@ -473,7 +431,7 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                           backdropFilter: 'blur(20px)'
                         }}
                         formatter={(value, name) => [
-                          `${value} suppliers (${filteredSuppliers.length > 0 ? ((value as number) / filteredSuppliers.length * 100).toFixed(1) : 0}%)`,
+                          `${value} suppliers (${suppliers.length > 0 ? ((value as number) / suppliers.length * 100).toFixed(1) : 0}%)`,
                           'Count'
                         ]}
                       />
@@ -489,7 +447,6 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Compliance Summary */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {complianceData.map((item, index) => (
                     <div key={index} className="glass-card p-3 rounded-lg">
@@ -520,23 +477,22 @@ export const AdvancedAnalytics = ({ suppliers = [] }: AdvancedAnalyticsProps) =>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {filteredSuppliers.length > 0 ? (
-                  <ul className="space-y-3">
-                    {filteredSuppliers
-                      .filter(s => s.totalScore <= 60)
-                      .sort((a, b) => (a.totalScore || 0) - (b.totalScore || 0))
-                      .slice(0, 5)
-                      .map((supplier) => (
-                        <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">{supplier.name}</p>
-                            <p className="text-sm text-gray-600">{supplier.industry}</p>
-                          </div>
-                          <div className="font-bold text-xl text-gray-500">{supplier.totalScore}%</div>
-                        </li>
-                      ))}
-                  </ul>
-                ) : (
+                <ul className="space-y-3">
+                  {suppliers
+                    .filter(s => (s.overallScore || 0) <= 60)
+                    .sort((a, b) => (a.overallScore || 0) - (b.overallScore || 0))
+                    .slice(0, 5)
+                    .map((supplier) => (
+                      <li key={supplier.id} className="glass-card p-3 rounded-lg flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">{supplier.industry}</p>
+                        </div>
+                        <div className="font-bold text-xl text-gray-500">{(supplier.overallScore || 0).toFixed(1)}</div>
+                      </li>
+                    ))}
+                </ul>
+                {suppliers.filter(s => (s.overallScore || 0) <= 60).length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No non-compliant suppliers found</p>
                   </div>

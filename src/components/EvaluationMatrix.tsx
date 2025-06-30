@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+
+import { useState, useEffect, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { DEFAULT_CRITERIA, SCORING_SCALE } from "@/types/supplier";
-import { mockSuppliers, mockScores } from "@/data/mockData";
-import { TrendingUp, TrendingDown, Minus, Search, SortAsc, SortDesc, Filter, Eye, EyeOff, Medal, Crown, Award, Star } from "lucide-react";
+import { DEFAULT_CRITERIA, SCORING_SCALE, Supplier } from "@/types/supplier";
+import { supplierService } from "@/services/supplierService";
+import { TrendingUp, TrendingDown, Minus, Search, SortAsc, SortDesc, Filter, Crown, Medal, Award, Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 interface SortConfig {
   key: string;
@@ -27,7 +30,7 @@ interface FilterConfig {
 }
 
 export const EvaluationMatrix = () => {
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'totalScore', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'overallScore', direction: 'desc' });
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCriteria, setVisibleCriteria] = useState<string[]>(DEFAULT_CRITERIA.map(c => c.id));
   const [filters, setFilters] = useState<FilterConfig>({
@@ -39,28 +42,30 @@ export const EvaluationMatrix = () => {
     rankingTier: 'all'
   });
 
-  const calculateSupplierScore = (supplierId: string) => {
-    const supplierScores = mockScores.filter(score => score.supplierId === supplierId);
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
+  // Fetch suppliers from Supabase
+  const { data: suppliers = [], isLoading, error } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: supplierService.getAllSuppliers,
+  });
 
-    DEFAULT_CRITERIA.forEach(criteria => {
-      const score = supplierScores.find(s => s.criteriaId === criteria.id);
-      if (score) {
-        totalWeightedScore += (score.score * criteria.weight) / 100;
-        totalWeight += criteria.weight;
-      }
-    });
-
-    return totalWeight > 0 ? totalWeightedScore : 0;
-  };
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading suppliers",
+        description: "Failed to fetch supplier data from database",
+        variant: "destructive"
+      });
+    }
+  }, [error]);
 
   const suppliersWithScores = useMemo(() => {
-    return mockSuppliers
+    if (!suppliers.length) return [];
+
+    return suppliers
       .filter(supplier => supplier.status === filters.statusFilter || filters.statusFilter === 'all')
       .map(supplier => ({
         ...supplier,
-        totalScore: calculateSupplierScore(supplier.id)
+        totalScore: supplier.overallScore || 0
       }))
       .filter(supplier => {
         const matchesSearch = supplier.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
@@ -71,7 +76,7 @@ export const EvaluationMatrix = () => {
         return matchesSearch && matchesScoreRange && matchesIndustry;
       })
       .sort((a, b) => {
-        if (sortConfig.key === 'totalScore') {
+        if (sortConfig.key === 'overallScore' || sortConfig.key === 'totalScore') {
           return sortConfig.direction === 'desc' ? b.totalScore - a.totalScore : a.totalScore - b.totalScore;
         }
         if (sortConfig.key === 'name') {
@@ -81,10 +86,15 @@ export const EvaluationMatrix = () => {
           return sortConfig.direction === 'desc' ? b.industry.localeCompare(a.industry) : a.industry.localeCompare(b.industry);
         }
         
-        // Handle criteria-specific sorting
-        const criteriaA = mockScores.find(s => s.supplierId === a.id && s.criteriaId === sortConfig.key)?.score || 0;
-        const criteriaB = mockScores.find(s => s.supplierId === b.id && s.criteriaId === sortConfig.key)?.score || 0;
-        return sortConfig.direction === 'desc' ? criteriaB - criteriaA : criteriaA - criteriaB;
+        // Handle criteria-specific sorting using scores object
+        const criteriaName = DEFAULT_CRITERIA.find(c => c.id === sortConfig.key)?.name;
+        if (criteriaName) {
+          const scoreA = a.scores?.[criteriaName] || 0;
+          const scoreB = b.scores?.[criteriaName] || 0;
+          return sortConfig.direction === 'desc' ? scoreB - scoreA : scoreA - scoreB;
+        }
+        
+        return 0;
       })
       .filter(supplier => {
         if (filters.rankingTier === 'all') return true;
@@ -94,7 +104,7 @@ export const EvaluationMatrix = () => {
         if (filters.rankingTier === 'bottom') return rank > suppliersWithScores.length * 0.8;
         return true;
       });
-  }, [filters, sortConfig]);
+  }, [suppliers, filters, sortConfig]);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -159,20 +169,30 @@ export const EvaluationMatrix = () => {
     return null;
   };
 
-  const uniqueIndustries = Array.from(new Set(mockSuppliers.map(s => s.industry)));
+  const uniqueIndustries = Array.from(new Set(suppliers.map(s => s.industry)));
 
-  const handleTiedScores = (suppliers: Array<{ id: string; name: string; totalScore: number }>) => {
-    const groupedByScore = suppliers.reduce((acc, supplierItem, index) => {
-      const scoreKey = supplierItem.totalScore.toFixed(1);
-      if (!acc[scoreKey]) acc[scoreKey] = [];
-      acc[scoreKey].push({ ...supplierItem, originalIndex: index });
-      return acc;
-    }, {} as Record<string, Array<{ id: string; name: string; totalScore: number; originalIndex: number }>>);
+  if (isLoading) {
+    return (
+      <Card className="frosted-glass border-0">
+        <CardContent className="p-6">
+          <div className="text-center">Loading supplier data...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-    return Object.values(groupedByScore).some(group => group.length > 1);
-  };
-
-  const hasTiedScores = handleTiedScores(suppliersWithScores);
+  if (!suppliers.length) {
+    return (
+      <Card className="frosted-glass border-0">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Suppliers Available</h3>
+            <p className="text-gray-600">Add suppliers to see them in the evaluation matrix.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="frosted-glass border-0 overflow-hidden">
@@ -195,11 +215,6 @@ export const EvaluationMatrix = () => {
             <Badge className="bg-blue-100 text-blue-800 text-xs">
               {suppliersWithScores.length} suppliers shown
             </Badge>
-            {hasTiedScores && (
-              <Badge className="bg-yellow-100 text-yellow-800 text-xs">
-                Tied scores detected
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -235,16 +250,16 @@ export const EvaluationMatrix = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Ranking Tier</label>
-                <Select value={filters.rankingTier} onValueChange={(value) => setFilters(prev => ({ ...prev, rankingTier: value }))}>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Status Filter</label>
+                <Select value={filters.statusFilter} onValueChange={(value) => setFilters(prev => ({ ...prev, statusFilter: value }))}>
                   <SelectTrigger className="glass-input border-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="glass-card border-0">
-                    <SelectItem value="all">All Suppliers</SelectItem>
-                    <SelectItem value="top3">Top 3 Performers</SelectItem>
-                    <SelectItem value="top10">Top 10 Performers</SelectItem>
-                    <SelectItem value="bottom">Bottom 20%</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -321,10 +336,10 @@ export const EvaluationMatrix = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleSort('totalScore')}
+                      onClick={() => handleSort('overallScore')}
                       className="text-sm font-medium"
                     >
-                      Overall Score {getSortIcon('totalScore')}
+                      Overall Score {getSortIcon('overallScore')}
                     </Button>
                   </TableHead>
                   {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => (
@@ -342,91 +357,86 @@ export const EvaluationMatrix = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {suppliersWithScores.map((supplier, index) => {
-                  const supplierScores = mockScores.filter(score => score.supplierId === supplier.id);
-                  return (
-                    <TableRow key={supplier.id} className="hover:bg-gray-50/50 border-gray-200/30">
-                      <TableCell className="text-center sticky left-0 bg-white/80 backdrop-blur-sm">
-                        {getRankBadge(index, supplier.totalScore)}
-                      </TableCell>
-                      <TableCell className="sticky left-16 bg-white/80 backdrop-blur-sm">
-                        <div className="space-y-1 min-w-0">
-                          <div className="font-semibold text-blue-900 flex items-center gap-2">
-                            <span className="truncate">{supplier.name}</span>
-                            {getPerformanceIcon(supplier.totalScore)}
-                          </div>
-                          <div className="text-sm text-gray-500 truncate">{supplier.industry}</div>
-                          <div className="text-xs text-gray-400">Est. {supplier.establishedYear}</div>
+                {suppliersWithScores.map((supplier, index) => (
+                  <TableRow key={supplier.id} className="hover:bg-gray-50/50 border-gray-200/30">
+                    <TableCell className="text-center sticky left-0 bg-white/80 backdrop-blur-sm">
+                      {getRankBadge(index, supplier.totalScore)}
+                    </TableCell>
+                    <TableCell className="sticky left-16 bg-white/80 backdrop-blur-sm">
+                      <div className="space-y-1 min-w-0">
+                        <div className="font-semibold text-blue-900 flex items-center gap-2">
+                          <span className="truncate">{supplier.name}</span>
+                          {getPerformanceIcon(supplier.totalScore)}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="space-y-2">
-                          <div className={`text-xl font-bold ${getScoreColor(supplier.totalScore)}`}>
-                            {supplier.totalScore.toFixed(1)}
-                          </div>
-                          <Progress value={supplier.totalScore} className="w-20 mx-auto" />
-                          {getScoreBadge(supplier.totalScore)}
+                        <div className="text-sm text-gray-500 truncate">{supplier.industry}</div>
+                        <div className="text-xs text-gray-400">Est. {supplier.establishedYear}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="space-y-2">
+                        <div className={`text-xl font-bold ${getScoreColor(supplier.totalScore)}`}>
+                          {supplier.totalScore.toFixed(1)}
                         </div>
-                      </TableCell>
-                      {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => {
-                        const score = supplierScores.find(s => s.criteriaId === criteria.id);
-                        const scoreValue = score?.score || 0;
-                        return (
-                          <TableCell key={criteria.id} className="text-center">
-                            <div className="space-y-1">
-                              <div className={`text-lg font-semibold ${getScoreColor(scoreValue)}`}>
-                                {scoreValue || 'N/A'}
-                              </div>
-                              <Progress value={scoreValue} className="w-16 mx-auto" />
-                              {score && (
-                                <div className="text-xs text-gray-500 max-w-[80px] truncate mx-auto" title={score.comments}>
-                                  {score.comments}
-                                </div>
-                              )}
+                        <Progress value={supplier.totalScore} className="w-20 mx-auto" />
+                        {getScoreBadge(supplier.totalScore)}
+                      </div>
+                    </TableCell>
+                    {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => {
+                      const scoreValue = supplier.scores?.[criteria.name] || 0;
+                      // Convert to 0-100 scale for display
+                      const displayScore = scoreValue * 10;
+                      return (
+                        <TableCell key={criteria.id} className="text-center">
+                          <div className="space-y-1">
+                            <div className={`text-lg font-semibold ${getScoreColor(displayScore)}`}>
+                              {displayScore.toFixed(1)}
                             </div>
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
+                            <Progress value={displayScore} className="w-16 mx-auto" />
+                          </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
         </div>
         
-        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg mx-6 mb-6">
-          <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Performance Analytics Summary
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <div className="glass-card p-3 rounded-lg">
-              <span className="font-medium text-gray-700">Top Performer:</span>
-              <div className="mt-1 text-blue-700 font-semibold">
-                {suppliersWithScores[0]?.name} ({suppliersWithScores[0]?.totalScore.toFixed(1)})
+        {suppliersWithScores.length > 0 && (
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg mx-6 mb-6">
+            <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Performance Analytics Summary
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="glass-card p-3 rounded-lg">
+                <span className="font-medium text-gray-700">Top Performer:</span>
+                <div className="mt-1 text-blue-700 font-semibold">
+                  {suppliersWithScores[0]?.name} ({suppliersWithScores[0]?.totalScore.toFixed(1)})
+                </div>
               </div>
-            </div>
-            <div className="glass-card p-3 rounded-lg">
-              <span className="font-medium text-gray-700">Average Score:</span>
-              <div className="mt-1 text-blue-700 font-semibold">
-                {(suppliersWithScores.reduce((sum, s) => sum + s.totalScore, 0) / suppliersWithScores.length).toFixed(1)}
+              <div className="glass-card p-3 rounded-lg">
+                <span className="font-medium text-gray-700">Average Score:</span>
+                <div className="mt-1 text-blue-700 font-semibold">
+                  {(suppliersWithScores.reduce((sum, s) => sum + s.totalScore, 0) / suppliersWithScores.length).toFixed(1)}
+                </div>
               </div>
-            </div>
-            <div className="glass-card p-3 rounded-lg">
-              <span className="font-medium text-gray-700">Score Range:</span>
-              <div className="mt-1 text-blue-700 font-semibold">
-                {Math.min(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)} - {Math.max(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)}
+              <div className="glass-card p-3 rounded-lg">
+                <span className="font-medium text-gray-700">Score Range:</span>
+                <div className="mt-1 text-blue-700 font-semibold">
+                  {Math.min(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)} - {Math.max(...suppliersWithScores.map(s => s.totalScore)).toFixed(1)}
+                </div>
               </div>
-            </div>
-            <div className="glass-card p-3 rounded-lg">
-              <span className="font-medium text-gray-700">Last Updated:</span>
-              <div className="mt-1 text-blue-700 font-semibold">
-                {new Date().toLocaleDateString()}
+              <div className="glass-card p-3 rounded-lg">
+                <span className="font-medium text-gray-700">Last Updated:</span>
+                <div className="mt-1 text-blue-700 font-semibold">
+                  {new Date().toLocaleDateString()}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -60,6 +60,8 @@ export const supplierService = {
 
     return data?.map(supplier => ({
       ...supplier,
+      contactPerson: supplier.contact_person,
+      establishedYear: supplier.established_year || 0,
       createdAt: new Date(supplier.created_at),
       updatedAt: new Date(supplier.updated_at),
       overallScore: supplier.overall_score || 0,
@@ -101,6 +103,8 @@ export const supplierService = {
 
     return {
       ...data,
+      contactPerson: data.contact_person,
+      establishedYear: data.established_year || 0,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       overallScore: data.overall_score || 0,
@@ -143,6 +147,8 @@ export const supplierService = {
 
     return {
       ...data,
+      contactPerson: data.contact_person,
+      establishedYear: data.established_year || 0,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       overallScore: data.overall_score || 0,
