@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
@@ -42,7 +43,7 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  const supplier: Supplier = {
+  return {
     id: String(dbSupplier.id || ''),
     name: String(dbSupplier.name || ''),
     description: String(dbSupplier.description || ''),
@@ -76,12 +77,12 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
       'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices || 0)
     }
   };
-
-  return supplier;
 };
 
 export const supplierService = {
   async getAllSuppliers(): Promise<Supplier[]> {
+    console.log('Fetching suppliers from database...');
+    
     const { data, error } = await supabase
       .from('suppliers')
       .select('*')
@@ -97,7 +98,14 @@ export const supplierService = {
       throw error;
     }
 
-    return data?.map(mapSupplierFromDatabase) || [];
+    console.log('Raw supplier data from database:', data);
+    
+    const mappedSuppliers = data?.map(mapSupplierFromDatabase) || [];
+    
+    console.log('Mapped suppliers:', mappedSuppliers);
+    console.log('Active suppliers count:', mappedSuppliers.filter(s => s.status === 'active').length);
+    
+    return mappedSuppliers;
   },
 
   async createSupplier(supplierData: SupplierInsert): Promise<Supplier> {

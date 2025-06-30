@@ -36,6 +36,7 @@ export const SupplierDashboard = () => {
     try {
       setLoading(true);
       const data = await supplierService.getAllSuppliers();
+      console.log('Fetched suppliers in dashboard:', data);
       setSuppliers(data);
     } catch (error) {
       console.error('Error fetching suppliers:', error);
@@ -56,7 +57,14 @@ export const SupplierDashboard = () => {
            supplier.industry.toLowerCase().includes(searchLower);
   });
 
-  const activeSuppliers = suppliers.filter((supplier) => supplier.status === 'active').length;
+  const activeSuppliers = suppliers.filter((supplier) => {
+    console.log(`Supplier ${supplier.name} has status: ${supplier.status}`);
+    return supplier.status === 'active';
+  }).length;
+  
+  console.log('Total suppliers:', suppliers.length);
+  console.log('Active suppliers count:', activeSuppliers);
+  
   const averageScore =
     suppliers.length > 0 
       ? suppliers.reduce((acc, supplier) => acc + (supplier.overallScore || 0), 0) / suppliers.length
