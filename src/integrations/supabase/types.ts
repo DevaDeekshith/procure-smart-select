@@ -9,13 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      suppliers: {
+        Row: {
+          address: string | null
+          business_stability_longevity: number | null
+          certifications: string[] | null
+          communication_effectiveness: number | null
+          contact_person: string
+          contract_compliance_history: number | null
+          created_at: string
+          defect_rate_quality_control: number | null
+          description: string | null
+          email: string
+          emergency_response_capability: number | null
+          environmental_certifications: number | null
+          established_year: number | null
+          id: string
+          industry: string
+          lead_time_competitiveness: number | null
+          name: string
+          ontime_delivery_performance: number | null
+          overall_score: number | null
+          payment_terms_flexibility: number | null
+          phone: string
+          product_specifications_adherence: number | null
+          quality_certifications_score: number | null
+          social_responsibility_programs: number | null
+          status: string
+          sustainable_sourcing_practices: number | null
+          total_cost_ownership: number | null
+          unit_pricing_competitiveness: number | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_stability_longevity?: number | null
+          certifications?: string[] | null
+          communication_effectiveness?: number | null
+          contact_person: string
+          contract_compliance_history?: number | null
+          created_at?: string
+          defect_rate_quality_control?: number | null
+          description?: string | null
+          email: string
+          emergency_response_capability?: number | null
+          environmental_certifications?: number | null
+          established_year?: number | null
+          id?: string
+          industry: string
+          lead_time_competitiveness?: number | null
+          name: string
+          ontime_delivery_performance?: number | null
+          overall_score?: number | null
+          payment_terms_flexibility?: number | null
+          phone: string
+          product_specifications_adherence?: number | null
+          quality_certifications_score?: number | null
+          social_responsibility_programs?: number | null
+          status?: string
+          sustainable_sourcing_practices?: number | null
+          total_cost_ownership?: number | null
+          unit_pricing_competitiveness?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_stability_longevity?: number | null
+          certifications?: string[] | null
+          communication_effectiveness?: number | null
+          contact_person?: string
+          contract_compliance_history?: number | null
+          created_at?: string
+          defect_rate_quality_control?: number | null
+          description?: string | null
+          email?: string
+          emergency_response_capability?: number | null
+          environmental_certifications?: number | null
+          established_year?: number | null
+          id?: string
+          industry?: string
+          lead_time_competitiveness?: number | null
+          name?: string
+          ontime_delivery_performance?: number | null
+          overall_score?: number | null
+          payment_terms_flexibility?: number | null
+          phone?: string
+          product_specifications_adherence?: number | null
+          quality_certifications_score?: number | null
+          social_responsibility_programs?: number | null
+          status?: string
+          sustainable_sourcing_practices?: number | null
+          total_cost_ownership?: number | null
+          unit_pricing_competitiveness?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_overall_score: {
+        Args: { supplier_row: Database["public"]["Tables"]["suppliers"]["Row"] }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
