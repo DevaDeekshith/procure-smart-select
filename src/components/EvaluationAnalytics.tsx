@@ -72,7 +72,7 @@ export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => 
               <Badge className="bg-yellow-100 text-yellow-800">{scoreDistribution.satisfactory}</Badge>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Needs Improvement (<70)</span>
+              <span className="text-sm font-medium">Needs Improvement (&lt;70)</span>
               <Badge className="bg-red-100 text-red-800">{scoreDistribution.needsImprovement}</Badge>
             </div>
           </div>
