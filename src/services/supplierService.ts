@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
@@ -43,43 +44,44 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  // Create a plain object to avoid type inference issues
-  const supplierData = {
-    id: String(dbSupplier.id),
-    name: String(dbSupplier.name),
-    description: String(dbSupplier.description || ''),
-    contactPerson: String(dbSupplier.contact_person),
-    email: String(dbSupplier.email),
-    phone: String(dbSupplier.phone),
-    address: String(dbSupplier.address || ''),
-    industry: String(dbSupplier.industry),
-    establishedYear: Number(dbSupplier.established_year) || 0,
-    certifications: Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [],
-    status: dbSupplier.status as 'active' | 'inactive' | 'pending' | 'rejected',
-    website: String(dbSupplier.website || ''),
-    overallScore: Number(dbSupplier.overall_score) || 0,
-    createdAt: new Date(dbSupplier.created_at),
-    updatedAt: new Date(dbSupplier.updated_at),
-    scores: {
-      'Product Specifications Adherence': Number(dbSupplier.product_specifications_adherence) || 0,
-      'Defect Rate & Quality Control': Number(dbSupplier.defect_rate_quality_control) || 0,
-      'Quality Certifications': Number(dbSupplier.quality_certification_score) || 0,
-      'Unit Pricing Competitiveness': Number(dbSupplier.unit_pricing_competitiveness) || 0,
-      'Payment Terms Flexibility': Number(dbSupplier.payment_terms_flexibility) || 0,
-      'Total Cost of Ownership': Number(dbSupplier.total_cost_ownership) || 0,
-      'On-time Delivery Performance': Number(dbSupplier.ontime_delivery_performance) || 0,
-      'Lead Time Competitiveness': Number(dbSupplier.lead_time_competitiveness) || 0,
-      'Emergency Response Capability': Number(dbSupplier.emergency_response_capability) || 0,
-      'Communication Effectiveness': Number(dbSupplier.communication_effectiveness) || 0,
-      'Contract Compliance History': Number(dbSupplier.contract_compliance_history) || 0,
-      'Business Stability & Longevity': Number(dbSupplier.business_stability_longevity) || 0,
-      'Environmental Certifications': Number(dbSupplier.environmental_certifications) || 0,
-      'Social Responsibility Programs': Number(dbSupplier.social_responsibility_programs) || 0,
-      'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices) || 0
-    }
-  };
+  // Build scores object with explicit typing
+  const scores: { [key: string]: number } = {};
+  scores['Product Specifications Adherence'] = Number(dbSupplier.product_specifications_adherence) || 0;
+  scores['Defect Rate & Quality Control'] = Number(dbSupplier.defect_rate_quality_control) || 0;
+  scores['Quality Certifications'] = Number(dbSupplier.quality_certification_score) || 0;
+  scores['Unit Pricing Competitiveness'] = Number(dbSupplier.unit_pricing_competitiveness) || 0;
+  scores['Payment Terms Flexibility'] = Number(dbSupplier.payment_terms_flexibility) || 0;
+  scores['Total Cost of Ownership'] = Number(dbSupplier.total_cost_ownership) || 0;
+  scores['On-time Delivery Performance'] = Number(dbSupplier.ontime_delivery_performance) || 0;
+  scores['Lead Time Competitiveness'] = Number(dbSupplier.lead_time_competitiveness) || 0;
+  scores['Emergency Response Capability'] = Number(dbSupplier.emergency_response_capability) || 0;
+  scores['Communication Effectiveness'] = Number(dbSupplier.communication_effectiveness) || 0;
+  scores['Contract Compliance History'] = Number(dbSupplier.contract_compliance_history) || 0;
+  scores['Business Stability & Longevity'] = Number(dbSupplier.business_stability_longevity) || 0;
+  scores['Environmental Certifications'] = Number(dbSupplier.environmental_certifications) || 0;
+  scores['Social Responsibility Programs'] = Number(dbSupplier.social_responsibility_programs) || 0;
+  scores['Sustainable Sourcing Practices'] = Number(dbSupplier.sustainable_sourcing_practices) || 0;
 
-  return supplierData as Supplier;
+  // Build supplier object step by step to avoid deep type inference
+  const supplier = {} as Supplier;
+  supplier.id = String(dbSupplier.id);
+  supplier.name = String(dbSupplier.name);
+  supplier.description = String(dbSupplier.description || '');
+  supplier.contactPerson = String(dbSupplier.contact_person);
+  supplier.email = String(dbSupplier.email);
+  supplier.phone = String(dbSupplier.phone);
+  supplier.address = String(dbSupplier.address || '');
+  supplier.industry = String(dbSupplier.industry);
+  supplier.establishedYear = Number(dbSupplier.established_year) || 0;
+  supplier.certifications = Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [];
+  supplier.status = dbSupplier.status as 'active' | 'inactive' | 'pending' | 'rejected';
+  supplier.website = String(dbSupplier.website || '');
+  supplier.overallScore = Number(dbSupplier.overall_score) || 0;
+  supplier.createdAt = new Date(dbSupplier.created_at);
+  supplier.updatedAt = new Date(dbSupplier.updated_at);
+  supplier.scores = scores;
+
+  return supplier;
 };
 
 export const supplierService = {
@@ -156,3 +158,4 @@ export const supplierService = {
     }
   }
 };
+
