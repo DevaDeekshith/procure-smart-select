@@ -19,7 +19,7 @@ export interface SupplierInsert {
   // Product Quality scores
   product_specifications_adherence?: number;
   defect_rate_quality_control?: number;
-  quality_certifications_score?: number;
+  quality_certification_score?: number;
   
   // Cost Competitiveness scores
   unit_pricing_competitiveness?: number;
@@ -58,7 +58,7 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     scores: {
       'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
       'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
-      'Quality Certifications': dbSupplier.quality_certifications_score || 0,
+      'Quality Certifications': dbSupplier.quality_certification_score || 0,
       'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
       'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
       'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,

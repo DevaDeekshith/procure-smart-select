@@ -17,14 +17,13 @@ export type Database = {
           communication_effectiveness: number | null
           contact_person: string
           contract_compliance_history: number | null
-          created_at: string
+          created_at: string | null
           defect_rate_quality_control: number | null
           description: string | null
           email: string
           emergency_response_capability: number | null
           environmental_certifications: number | null
           established_year: number | null
-          id: string
           industry: string
           lead_time_competitiveness: number | null
           name: string
@@ -33,13 +32,13 @@ export type Database = {
           payment_terms_flexibility: number | null
           phone: string
           product_specifications_adherence: number | null
-          quality_certifications_score: number | null
+          quality_certification_score: number | null
           social_responsibility_programs: number | null
           status: string
           sustainable_sourcing_practices: number | null
           total_cost_ownership: number | null
           unit_pricing_competitiveness: number | null
-          updated_at: string
+          updated_at: string | null
           website: string | null
         }
         Insert: {
@@ -49,14 +48,13 @@ export type Database = {
           communication_effectiveness?: number | null
           contact_person: string
           contract_compliance_history?: number | null
-          created_at?: string
+          created_at?: string | null
           defect_rate_quality_control?: number | null
           description?: string | null
           email: string
           emergency_response_capability?: number | null
           environmental_certifications?: number | null
           established_year?: number | null
-          id?: string
           industry: string
           lead_time_competitiveness?: number | null
           name: string
@@ -65,13 +63,13 @@ export type Database = {
           payment_terms_flexibility?: number | null
           phone: string
           product_specifications_adherence?: number | null
-          quality_certifications_score?: number | null
+          quality_certification_score?: number | null
           social_responsibility_programs?: number | null
           status?: string
           sustainable_sourcing_practices?: number | null
           total_cost_ownership?: number | null
           unit_pricing_competitiveness?: number | null
-          updated_at?: string
+          updated_at?: string | null
           website?: string | null
         }
         Update: {
@@ -81,14 +79,13 @@ export type Database = {
           communication_effectiveness?: number | null
           contact_person?: string
           contract_compliance_history?: number | null
-          created_at?: string
+          created_at?: string | null
           defect_rate_quality_control?: number | null
           description?: string | null
           email?: string
           emergency_response_capability?: number | null
           environmental_certifications?: number | null
           established_year?: number | null
-          id?: string
           industry?: string
           lead_time_competitiveness?: number | null
           name?: string
@@ -97,13 +94,13 @@ export type Database = {
           payment_terms_flexibility?: number | null
           phone?: string
           product_specifications_adherence?: number | null
-          quality_certifications_score?: number | null
+          quality_certification_score?: number | null
           social_responsibility_programs?: number | null
           status?: string
           sustainable_sourcing_practices?: number | null
           total_cost_ownership?: number | null
           unit_pricing_competitiveness?: number | null
-          updated_at?: string
+          updated_at?: string | null
           website?: string | null
         }
         Relationships: []
