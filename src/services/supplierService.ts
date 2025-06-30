@@ -43,7 +43,7 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  // Create a basic supplier object first
+  // Build the supplier object with explicit typing
   const supplier: Supplier = {
     id: String(dbSupplier.id || ''),
     name: String(dbSupplier.name || ''),
@@ -60,29 +60,24 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     overallScore: Number(dbSupplier.overall_score || 0),
     createdAt: new Date(dbSupplier.created_at || Date.now()),
     updatedAt: new Date(dbSupplier.updated_at || Date.now()),
-    scores: {}
+    scores: {
+      'Product Specifications Adherence': Number(dbSupplier.product_specifications_adherence || 0),
+      'Defect Rate & Quality Control': Number(dbSupplier.defect_rate_quality_control || 0),
+      'Quality Certifications': Number(dbSupplier.quality_certification_score || 0),
+      'Unit Pricing Competitiveness': Number(dbSupplier.unit_pricing_competitiveness || 0),
+      'Payment Terms Flexibility': Number(dbSupplier.payment_terms_flexibility || 0),
+      'Total Cost of Ownership': Number(dbSupplier.total_cost_ownership || 0),
+      'On-time Delivery Performance': Number(dbSupplier.ontime_delivery_performance || 0),
+      'Lead Time Competitiveness': Number(dbSupplier.lead_time_competitiveness || 0),
+      'Emergency Response Capability': Number(dbSupplier.emergency_response_capability || 0),
+      'Communication Effectiveness': Number(dbSupplier.communication_effectiveness || 0),
+      'Contract Compliance History': Number(dbSupplier.contract_compliance_history || 0),
+      'Business Stability & Longevity': Number(dbSupplier.business_stability_longevity || 0),
+      'Environmental Certifications': Number(dbSupplier.environmental_certifications || 0),
+      'Social Responsibility Programs': Number(dbSupplier.social_responsibility_programs || 0),
+      'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices || 0)
+    }
   };
-
-  // Build scores object separately to avoid type inference issues
-  const scoresMap: Record<string, number> = {};
-  scoresMap['Product Specifications Adherence'] = Number(dbSupplier.product_specifications_adherence || 0);
-  scoresMap['Defect Rate & Quality Control'] = Number(dbSupplier.defect_rate_quality_control || 0);
-  scoresMap['Quality Certifications'] = Number(dbSupplier.quality_certification_score || 0);
-  scoresMap['Unit Pricing Competitiveness'] = Number(dbSupplier.unit_pricing_competitiveness || 0);
-  scoresMap['Payment Terms Flexibility'] = Number(dbSupplier.payment_terms_flexibility || 0);
-  scoresMap['Total Cost of Ownership'] = Number(dbSupplier.total_cost_ownership || 0);
-  scoresMap['On-time Delivery Performance'] = Number(dbSupplier.ontime_delivery_performance || 0);
-  scoresMap['Lead Time Competitiveness'] = Number(dbSupplier.lead_time_competitiveness || 0);
-  scoresMap['Emergency Response Capability'] = Number(dbSupplier.emergency_response_capability || 0);
-  scoresMap['Communication Effectiveness'] = Number(dbSupplier.communication_effectiveness || 0);
-  scoresMap['Contract Compliance History'] = Number(dbSupplier.contract_compliance_history || 0);
-  scoresMap['Business Stability & Longevity'] = Number(dbSupplier.business_stability_longevity || 0);
-  scoresMap['Environmental Certifications'] = Number(dbSupplier.environmental_certifications || 0);
-  scoresMap['Social Responsibility Programs'] = Number(dbSupplier.social_responsibility_programs || 0);
-  scoresMap['Sustainable Sourcing Practices'] = Number(dbSupplier.sustainable_sourcing_practices || 0);
-
-  // Assign scores to supplier
-  supplier.scores = scoresMap;
 
   return supplier;
 };
@@ -111,7 +106,7 @@ export const supplierService = {
     // Normalize status to ensure it's valid
     const normalizedData = {
       ...supplierData,
-      status: supplierData.status?.toLowerCase() as 'active' | 'inactive' | 'pending' | 'rejected' || 'pending'
+      status: (supplierData.status?.toLowerCase() || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected'
     };
 
     const { data, error } = await supabase
@@ -137,7 +132,7 @@ export const supplierService = {
     // Normalize status to ensure it's valid
     const normalizedData = {
       ...supplierData,
-      status: supplierData.status?.toLowerCase() as 'active' | 'inactive' | 'pending' | 'rejected'
+      status: supplierData.status ? (supplierData.status.toLowerCase() as 'active' | 'inactive' | 'pending' | 'rejected') : undefined
     };
 
     const { data, error } = await supabase
@@ -181,7 +176,7 @@ export const supplierService = {
     // Normalize all status values to ensure they're valid
     const normalizedData = suppliersData.map(supplier => ({
       ...supplier,
-      status: supplier.status?.toLowerCase() as 'active' | 'inactive' | 'pending' | 'rejected' || 'pending'
+      status: (supplier.status?.toLowerCase() || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected'
     }));
 
     const { data, error } = await supabase
