@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
@@ -42,9 +41,9 @@ export interface SupplierInsert {
   sustainable_sourcing_practices?: number;
 }
 
-const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  // Create scores object step by step to avoid type inference issues
-  const supplierScores = {
+// Helper function to create scores object
+const createScoresObject = (dbSupplier: any): Record<string, number> => {
+  return {
     'Product Specifications Adherence': Number(dbSupplier.product_specifications_adherence) || 0,
     'Defect Rate & Quality Control': Number(dbSupplier.defect_rate_quality_control) || 0,
     'Quality Certifications': Number(dbSupplier.quality_certification_score) || 0,
@@ -61,9 +60,12 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     'Social Responsibility Programs': Number(dbSupplier.social_responsibility_programs) || 0,
     'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices) || 0
   };
+};
 
-  // Build supplier object with explicit property assignment
-  return {
+const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
+  const scores = createScoresObject(dbSupplier);
+  
+  const supplier: Supplier = {
     id: String(dbSupplier.id),
     name: String(dbSupplier.name),
     description: String(dbSupplier.description || ''),
@@ -79,8 +81,10 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     overallScore: Number(dbSupplier.overall_score) || 0,
     createdAt: new Date(dbSupplier.created_at),
     updatedAt: new Date(dbSupplier.updated_at),
-    scores: supplierScores
+    scores
   };
+
+  return supplier;
 };
 
 export const supplierService = {
