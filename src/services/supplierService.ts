@@ -44,17 +44,21 @@ export interface SupplierInsert {
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
   return {
-    ...dbSupplier,
+    id: dbSupplier.id,
+    name: dbSupplier.name,
+    description: dbSupplier.description || '',
     contactPerson: dbSupplier.contact_person,
+    email: dbSupplier.email,
+    phone: dbSupplier.phone,
+    address: dbSupplier.address || '',
+    industry: dbSupplier.industry,
     establishedYear: dbSupplier.established_year || 0,
+    certifications: dbSupplier.certifications || [],
+    status: dbSupplier.status as 'active' | 'inactive' | 'pending' | 'rejected',
+    website: dbSupplier.website || '',
+    overallScore: dbSupplier.overall_score || 0,
     createdAt: new Date(dbSupplier.created_at),
     updatedAt: new Date(dbSupplier.updated_at),
-    overallScore: dbSupplier.overall_score || 0,
-    status: dbSupplier.status as 'active' | 'inactive' | 'pending' | 'rejected',
-    description: dbSupplier.description || '',
-    address: dbSupplier.address || '',
-    website: dbSupplier.website || '',
-    certifications: dbSupplier.certifications || [],
     scores: {
       'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
       'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
