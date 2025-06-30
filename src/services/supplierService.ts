@@ -42,6 +42,39 @@ export interface SupplierInsert {
   sustainable_sourcing_practices?: number;
 }
 
+const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
+  return {
+    ...dbSupplier,
+    contactPerson: dbSupplier.contact_person,
+    establishedYear: dbSupplier.established_year || 0,
+    createdAt: new Date(dbSupplier.created_at),
+    updatedAt: new Date(dbSupplier.updated_at),
+    overallScore: dbSupplier.overall_score || 0,
+    status: dbSupplier.status as 'active' | 'inactive' | 'pending' | 'rejected',
+    description: dbSupplier.description || '',
+    address: dbSupplier.address || '',
+    website: dbSupplier.website || '',
+    certifications: dbSupplier.certifications || [],
+    scores: {
+      'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
+      'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
+      'Quality Certifications': dbSupplier.quality_certifications_score || 0,
+      'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
+      'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
+      'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,
+      'On-time Delivery Performance': dbSupplier.ontime_delivery_performance || 0,
+      'Lead Time Competitiveness': dbSupplier.lead_time_competitiveness || 0,
+      'Emergency Response Capability': dbSupplier.emergency_response_capability || 0,
+      'Communication Effectiveness': dbSupplier.communication_effectiveness || 0,
+      'Contract Compliance History': dbSupplier.contract_compliance_history || 0,
+      'Business Stability & Longevity': dbSupplier.business_stability_longevity || 0,
+      'Environmental Certifications': dbSupplier.environmental_certifications || 0,
+      'Social Responsibility Programs': dbSupplier.social_responsibility_programs || 0,
+      'Sustainable Sourcing Practices': dbSupplier.sustainable_sourcing_practices || 0,
+    }
+  };
+};
+
 export const supplierService = {
   async getAllSuppliers(): Promise<Supplier[]> {
     const { data, error } = await supabase
@@ -58,31 +91,7 @@ export const supplierService = {
       throw error;
     }
 
-    return data?.map(supplier => ({
-      ...supplier,
-      contactPerson: supplier.contact_person,
-      establishedYear: supplier.established_year || 0,
-      createdAt: new Date(supplier.created_at),
-      updatedAt: new Date(supplier.updated_at),
-      overallScore: supplier.overall_score || 0,
-      scores: {
-        'Product Specifications Adherence': supplier.product_specifications_adherence || 0,
-        'Defect Rate & Quality Control': supplier.defect_rate_quality_control || 0,
-        'Quality Certifications': supplier.quality_certifications_score || 0,
-        'Unit Pricing Competitiveness': supplier.unit_pricing_competitiveness || 0,
-        'Payment Terms Flexibility': supplier.payment_terms_flexibility || 0,
-        'Total Cost of Ownership': supplier.total_cost_ownership || 0,
-        'On-time Delivery Performance': supplier.ontime_delivery_performance || 0,
-        'Lead Time Competitiveness': supplier.lead_time_competitiveness || 0,
-        'Emergency Response Capability': supplier.emergency_response_capability || 0,
-        'Communication Effectiveness': supplier.communication_effectiveness || 0,
-        'Contract Compliance History': supplier.contract_compliance_history || 0,
-        'Business Stability & Longevity': supplier.business_stability_longevity || 0,
-        'Environmental Certifications': supplier.environmental_certifications || 0,
-        'Social Responsibility Programs': supplier.social_responsibility_programs || 0,
-        'Sustainable Sourcing Practices': supplier.sustainable_sourcing_practices || 0,
-      }
-    })) || [];
+    return data?.map(mapSupplierFromDatabase) || [];
   },
 
   async createSupplier(supplierData: SupplierInsert): Promise<Supplier> {
@@ -101,31 +110,7 @@ export const supplierService = {
       throw error;
     }
 
-    return {
-      ...data,
-      contactPerson: data.contact_person,
-      establishedYear: data.established_year || 0,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-      overallScore: data.overall_score || 0,
-      scores: {
-        'Product Specifications Adherence': data.product_specifications_adherence || 0,
-        'Defect Rate & Quality Control': data.defect_rate_quality_control || 0,
-        'Quality Certifications': data.quality_certifications_score || 0,
-        'Unit Pricing Competitiveness': data.unit_pricing_competitiveness || 0,
-        'Payment Terms Flexibility': data.payment_terms_flexibility || 0,
-        'Total Cost of Ownership': data.total_cost_ownership || 0,
-        'On-time Delivery Performance': data.ontime_delivery_performance || 0,
-        'Lead Time Competitiveness': data.lead_time_competitiveness || 0,
-        'Emergency Response Capability': data.emergency_response_capability || 0,
-        'Communication Effectiveness': data.communication_effectiveness || 0,
-        'Contract Compliance History': data.contract_compliance_history || 0,
-        'Business Stability & Longevity': data.business_stability_longevity || 0,
-        'Environmental Certifications': data.environmental_certifications || 0,
-        'Social Responsibility Programs': data.social_responsibility_programs || 0,
-        'Sustainable Sourcing Practices': data.sustainable_sourcing_practices || 0,
-      }
-    };
+    return mapSupplierFromDatabase(data);
   },
 
   async updateSupplier(id: string, supplierData: Partial<SupplierInsert>): Promise<Supplier> {
@@ -145,31 +130,7 @@ export const supplierService = {
       throw error;
     }
 
-    return {
-      ...data,
-      contactPerson: data.contact_person,
-      establishedYear: data.established_year || 0,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-      overallScore: data.overall_score || 0,
-      scores: {
-        'Product Specifications Adherence': data.product_specifications_adherence || 0,
-        'Defect Rate & Quality Control': data.defect_rate_quality_control || 0,
-        'Quality Certifications': data.quality_certifications_score || 0,
-        'Unit Pricing Competitiveness': data.unit_pricing_competitiveness || 0,
-        'Payment Terms Flexibility': data.payment_terms_flexibility || 0,
-        'Total Cost of Ownership': data.total_cost_ownership || 0,
-        'On-time Delivery Performance': data.ontime_delivery_performance || 0,
-        'Lead Time Competitiveness': data.lead_time_competitiveness || 0,
-        'Emergency Response Capability': data.emergency_response_capability || 0,
-        'Communication Effectiveness': data.communication_effectiveness || 0,
-        'Contract Compliance History': data.contract_compliance_history || 0,
-        'Business Stability & Longevity': data.business_stability_longevity || 0,
-        'Environmental Certifications': data.environmental_certifications || 0,
-        'Social Responsibility Programs': data.social_responsibility_programs || 0,
-        'Sustainable Sourcing Practices': data.sustainable_sourcing_practices || 0,
-      }
-    };
+    return mapSupplierFromDatabase(data);
   },
 
   async deleteSupplier(id: string): Promise<void> {
