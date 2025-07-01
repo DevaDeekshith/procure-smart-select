@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
@@ -42,6 +43,26 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
+  // Create scores object with explicit type annotation
+  const scores: Record<string, number> = {
+    'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
+    'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
+    'Quality Certifications': dbSupplier.quality_certification_score || 0,
+    'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
+    'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
+    'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,
+    'On-time Delivery Performance': dbSupplier.ontime_delivery_performance || 0,
+    'Lead Time Competitiveness': dbSupplier.lead_time_competitiveness || 0,
+    'Emergency Response Capability': dbSupplier.emergency_response_capability || 0,
+    'Communication Effectiveness': dbSupplier.communication_effectiveness || 0,
+    'Contract Compliance History': dbSupplier.contract_compliance_history || 0,
+    'Business Stability & Longevity': dbSupplier.business_stability_longevity || 0,
+    'Environmental Certifications': dbSupplier.environmental_certifications || 0,
+    'Social Responsibility Programs': dbSupplier.social_responsibility_programs || 0,
+    'Sustainable Sourcing Practices': dbSupplier.sustainable_sourcing_practices || 0
+  };
+
+  // Create supplier object step by step
   const supplier: Supplier = {
     id: dbSupplier.id || '',
     name: dbSupplier.name || '',
@@ -58,23 +79,7 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     overallScore: dbSupplier.overall_score || 0,
     createdAt: new Date(dbSupplier.created_at || Date.now()),
     updatedAt: new Date(dbSupplier.updated_at || Date.now()),
-    scores: {
-      'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
-      'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
-      'Quality Certifications': dbSupplier.quality_certification_score || 0,
-      'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
-      'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
-      'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,
-      'On-time Delivery Performance': dbSupplier.ontime_delivery_performance || 0,
-      'Lead Time Competitiveness': dbSupplier.lead_time_competitiveness || 0,
-      'Emergency Response Capability': dbSupplier.emergency_response_capability || 0,
-      'Communication Effectiveness': dbSupplier.communication_effectiveness || 0,
-      'Contract Compliance History': dbSupplier.contract_compliance_history || 0,
-      'Business Stability & Longevity': dbSupplier.business_stability_longevity || 0,
-      'Environmental Certifications': dbSupplier.environmental_certifications || 0,
-      'Social Responsibility Programs': dbSupplier.social_responsibility_programs || 0,
-      'Sustainable Sourcing Practices': dbSupplier.sustainable_sourcing_practices || 0
-    }
+    scores: scores
   };
 
   return supplier;
