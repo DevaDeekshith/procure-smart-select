@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { websiteContextService } from '@/services/websiteContextService';
+import { elevenLabsKnowledgeService } from '@/services/elevenLabsKnowledgeService';
 
 interface ElevenLabsWidgetProps {
   agentId?: string;
@@ -16,6 +17,9 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
       script.type = 'text/javascript';
       document.head.appendChild(script);
     }
+
+    // Sync knowledge base on component mount
+    elevenLabsKnowledgeService.syncKnowledgeBase();
 
     // Set up message listener for Eleven Labs widget
     const handleMessage = (event: MessageEvent) => {

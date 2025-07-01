@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
-import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy, Plus } from 'lucide-react';
+import { Building2, Users, CheckCircle, TrendingUp, Star, Grid, List, BarChart3, Settings, Trophy, Plus, Upload } from 'lucide-react';
 import { SupplierCard } from '@/components/SupplierCard';
 import { AddSupplierForm } from '@/components/AddSupplierForm';
+import { CSVUploadComponent } from '@/components/CSVUploadComponent';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { AdvancedSearch } from '@/components/AdvancedSearch';
 import { EvaluationMatrix } from '@/components/EvaluationMatrix';
@@ -27,6 +27,7 @@ export const SupplierDashboard = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddSupplierDialogOpen, setIsAddSupplierDialogOpen] = useState(false);
+  const [isCSVUploadDialogOpen, setIsCSVUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchSuppliers();
@@ -69,7 +70,14 @@ export const SupplierDashboard = () => {
     suppliers.length > 0 
       ? suppliers.reduce((acc, supplier) => acc + (supplier.overallScore || 0), 0) / suppliers.length
       : 0;
-  const topPerformers = suppliers.filter((supplier) => (supplier.overallScore || 0) > 90).length;
+
+  // Calculate top 10% dynamically (rounded up)
+  const topPerformersCount = Math.ceil(suppliers.length * 0.1);
+  const topPerformers = suppliers
+    .filter((supplier) => (supplier.overallScore || 0) > 0)
+    .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
+    .slice(0, topPerformersCount)
+    .length;
 
   // Handler functions
   const handleSupplierSelect = (supplier: Supplier) => {
@@ -84,6 +92,13 @@ export const SupplierDashboard = () => {
   const handleAddSupplier = async (newSupplier: Supplier) => {
     setSuppliers(prev => [newSupplier, ...prev]);
     setIsAddSupplierDialogOpen(false);
+    // Refresh data to ensure consistency
+    await fetchSuppliers();
+  };
+
+  const handleCSVUploadComplete = async (newSuppliers: Supplier[]) => {
+    setSuppliers(prev => [...newSuppliers, ...prev]);
+    setIsCSVUploadDialogOpen(false);
     // Refresh data to ensure consistency
     await fetchSuppliers();
   };
@@ -173,23 +188,59 @@ export const SupplierDashboard = () => {
                     />
                   </div>
                   
-                  <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="liquid-button text-white px-8 py-4 h-14 rounded-2xl hover-glow whitespace-nowrap">
-                        <Plus className="w-5 h-5 mr-2" />
-                        Add Supplier
-                      </Button>
-                    </DialogTrigger>
-                    <DialogPortal>
-                      <DialogOverlay />
-                      <DialogContent className="liquid-glass border-0">
-                        <AddSupplierForm 
-                          onSubmit={handleAddSupplier}
-                          onCancel={() => setIsAddSupplierDialogOpen(false)}
-                        />
-                      </DialogContent>
-                    </DialogPortal>
-                  </Dialog>
+                  <div className="flex gap-3">
+                    <Dialog open={isAddSupplierDialogOpen} onOpenChange={setIsAddSupplierDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="liquid-button text-white px-8 py-4 h-14 rounded-2xl hover-glow whitespace-nowrap">
+                          <Plus className="w-5 h-5 mr-2" />
+                          Add Supplier
+                        </Button>
+                      </DialogTrigger>
+                      <DialogPortal>
+                        <DialogOverlay />
+                        <DialogContent className="liquid-glass border-0 max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <Tabs defaultValue="manual" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 liquid-glass">
+                              <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                              <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="manual">
+                              <AddSupplierForm 
+                                onSubmit={handleAddSupplier}
+                                onCancel={() => setIsAddSupplierDialogOpen(false)}
+                              />
+                            </TabsContent>
+                            <TabsContent value="csv">
+                              <CSVUploadComponent 
+                                onUploadComplete={handleCSVUploadComplete}
+                                onCancel={() => setIsAddSupplierDialogOpen(false)}
+                                variant="dialog"
+                              />
+                            </TabsContent>
+                          </Tabs>
+                        </DialogContent>
+                      </DialogPortal>
+                    </Dialog>
+
+                    <Dialog open={isCSVUploadDialogOpen} onOpenChange={setIsCSVUploadDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="liquid-glass border-0 px-8 py-4 h-14 rounded-2xl hover-glow whitespace-nowrap">
+                          <Upload className="w-5 h-5 mr-2" />
+                          CSV Upload
+                        </Button>
+                      </DialogTrigger>
+                      <DialogPortal>
+                        <DialogOverlay />
+                        <DialogContent className="liquid-glass border-0 max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <CSVUploadComponent 
+                            onUploadComplete={handleCSVUploadComplete}
+                            onCancel={() => setIsCSVUploadDialogOpen(false)}
+                            variant="standalone"
+                          />
+                        </DialogContent>
+                      </DialogPortal>
+                    </Dialog>
+                  </div>
                 </div>
               </div>
             </div>
@@ -240,7 +291,7 @@ export const SupplierDashboard = () => {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">{topPerformers}</h3>
-                  <p className="text-gray-600">Top Performers</p>
+                  <p className="text-gray-600">Top 10% Performers</p>
                 </div>
               </div>
             </div>
@@ -366,15 +417,15 @@ export const SupplierDashboard = () => {
                     <CardHeader>
                       <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                         <Trophy className="w-6 h-6 text-yellow-600" />
-                        Top Performing Suppliers
+                        Top 10% Performers
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         {suppliers
-                          .filter(s => s.overallScore && s.overallScore >= 85)
+                          .filter(s => s.overallScore && s.overallScore > 0)
                           .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
-                          .slice(0, 5)
+                          .slice(0, topPerformersCount)
                           .map((supplier, index) => (
                             <div key={supplier.id} className="flex items-center justify-between p-4 liquid-glass rounded-xl">
                               <div className="flex items-center gap-4">
@@ -391,10 +442,10 @@ export const SupplierDashboard = () => {
                               </Badge>
                             </div>
                           ))}
-                        {suppliers.filter(s => s.overallScore && s.overallScore >= 85).length === 0 && (
+                        {suppliers.filter(s => s.overallScore && s.overallScore > 0).length === 0 && (
                           <div className="text-center py-8 text-gray-500">
                             <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p>No top performers yet. Add evaluation scores to see rankings.</p>
+                            <p>No scored suppliers yet. Add evaluation scores to see rankings.</p>
                           </div>
                         )}
                       </div>

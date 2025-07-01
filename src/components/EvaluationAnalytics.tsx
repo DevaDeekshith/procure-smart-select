@@ -9,10 +9,12 @@ interface EvaluationAnalyticsProps {
 }
 
 export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => {
+  // Calculate top 10% dynamically (rounded up)
+  const topPerformersCount = Math.ceil(suppliers.length * 0.1);
   const topPerformers = suppliers
-    .filter(s => s.overallScore && s.overallScore >= 85)
+    .filter(s => s.overallScore && s.overallScore > 0)
     .sort((a, b) => (b.overallScore || 0) - (a.overallScore || 0))
-    .slice(0, 5);
+    .slice(0, topPerformersCount);
 
   const averageScore = suppliers.length > 0 
     ? suppliers.reduce((sum, s) => sum + (s.overallScore || 0), 0) / suppliers.length
@@ -22,7 +24,7 @@ export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => 
     excellent: suppliers.filter(s => (s.overallScore || 0) >= 90).length,
     good: suppliers.filter(s => (s.overallScore || 0) >= 80 && (s.overallScore || 0) < 90).length,
     satisfactory: suppliers.filter(s => (s.overallScore || 0) >= 70 && (s.overallScore || 0) < 80).length,
-    needsImprovement: suppliers.filter(s => (s.overallScore || 0) < 70).length,
+    needsImprovement: suppliers.filter(s => (s.overallScore || 0) < 70 && (s.overallScore || 0) > 0).length,
   };
 
   return (
@@ -43,7 +45,7 @@ export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => 
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">{topPerformers.length}</div>
-              <div className="text-sm text-gray-600">Top Performers</div>
+              <div className="text-sm text-gray-600">Top 10% Performers</div>
             </div>
           </div>
         </CardContent>
@@ -84,7 +86,7 @@ export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => 
         <CardHeader>
           <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
             <Trophy className="w-6 h-6 text-yellow-600" />
-            Top Performing Suppliers
+            Top 10% Performing Suppliers
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -108,7 +110,7 @@ export const EvaluationAnalytics = ({ suppliers }: EvaluationAnalyticsProps) => 
             {topPerformers.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No top performers yet. Add evaluation scores to see rankings.</p>
+                <p>No scored suppliers yet. Add evaluation scores to see rankings.</p>
               </div>
             )}
           </div>
