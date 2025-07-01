@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
@@ -43,8 +42,25 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  // Explicitly define the scores with simple Record type to avoid inference issues
-  const supplierScores: Record<string, number> = {
+  // Create the supplier object step by step with explicit typing
+  const id: string = String(dbSupplier.id || '');
+  const name: string = String(dbSupplier.name || '');
+  const description: string = String(dbSupplier.description || '');
+  const contactPerson: string = String(dbSupplier.contact_person || '');
+  const email: string = String(dbSupplier.email || '');
+  const phone: string = String(dbSupplier.phone || '');
+  const address: string = String(dbSupplier.address || '');
+  const industry: string = String(dbSupplier.industry || '');
+  const establishedYear: number = Number(dbSupplier.established_year || 0);
+  const certifications: string[] = Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [];
+  const status = (dbSupplier.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected';
+  const website: string = String(dbSupplier.website || '');
+  const overallScore: number = Number(dbSupplier.overall_score || 0);
+  const createdAt: Date = new Date(dbSupplier.created_at || Date.now());
+  const updatedAt: Date = new Date(dbSupplier.updated_at || Date.now());
+  
+  // Create scores object with explicit typing
+  const scores: Record<string, number> = {
     'Product Specifications Adherence': Number(dbSupplier.product_specifications_adherence || 0),
     'Defect Rate & Quality Control': Number(dbSupplier.defect_rate_quality_control || 0),
     'Quality Certifications': Number(dbSupplier.quality_certification_score || 0),
@@ -62,27 +78,25 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices || 0)
   };
 
-  // Create supplier object with explicit typing to avoid deep type inference
-  const supplier: Supplier = {
-    id: String(dbSupplier.id || ''),
-    name: String(dbSupplier.name || ''),
-    description: String(dbSupplier.description || ''),
-    contactPerson: String(dbSupplier.contact_person || ''),
-    email: String(dbSupplier.email || ''),
-    phone: String(dbSupplier.phone || ''),
-    address: String(dbSupplier.address || ''),
-    industry: String(dbSupplier.industry || ''),
-    establishedYear: Number(dbSupplier.established_year || 0),
-    certifications: Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [],
-    status: (dbSupplier.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
-    website: String(dbSupplier.website || ''),
-    overallScore: Number(dbSupplier.overall_score || 0),
-    createdAt: new Date(dbSupplier.created_at || Date.now()),
-    updatedAt: new Date(dbSupplier.updated_at || Date.now()),
-    scores: supplierScores
+  // Return the supplier object with explicit property assignment
+  return {
+    id,
+    name,
+    description,
+    contactPerson,
+    email,
+    phone,
+    address,
+    industry,
+    establishedYear,
+    certifications,
+    status,
+    website,
+    overallScore,
+    createdAt,
+    updatedAt,
+    scores
   };
-
-  return supplier;
 };
 
 export const supplierService = {
