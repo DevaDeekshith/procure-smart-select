@@ -42,61 +42,44 @@ export interface SupplierInsert {
 }
 
 const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
-  // Create the supplier object step by step with explicit typing
-  const id: string = String(dbSupplier.id || '');
-  const name: string = String(dbSupplier.name || '');
-  const description: string = String(dbSupplier.description || '');
-  const contactPerson: string = String(dbSupplier.contact_person || '');
-  const email: string = String(dbSupplier.email || '');
-  const phone: string = String(dbSupplier.phone || '');
-  const address: string = String(dbSupplier.address || '');
-  const industry: string = String(dbSupplier.industry || '');
-  const establishedYear: number = Number(dbSupplier.established_year || 0);
-  const certifications: string[] = Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [];
-  const status = (dbSupplier.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected';
-  const website: string = String(dbSupplier.website || '');
-  const overallScore: number = Number(dbSupplier.overall_score || 0);
-  const createdAt: Date = new Date(dbSupplier.created_at || Date.now());
-  const updatedAt: Date = new Date(dbSupplier.updated_at || Date.now());
+  const result = {} as Supplier;
   
-  // Create scores object with explicit typing
-  const scores: Record<string, number> = {
-    'Product Specifications Adherence': Number(dbSupplier.product_specifications_adherence || 0),
-    'Defect Rate & Quality Control': Number(dbSupplier.defect_rate_quality_control || 0),
-    'Quality Certifications': Number(dbSupplier.quality_certification_score || 0),
-    'Unit Pricing Competitiveness': Number(dbSupplier.unit_pricing_competitiveness || 0),
-    'Payment Terms Flexibility': Number(dbSupplier.payment_terms_flexibility || 0),
-    'Total Cost of Ownership': Number(dbSupplier.total_cost_ownership || 0),
-    'On-time Delivery Performance': Number(dbSupplier.ontime_delivery_performance || 0),
-    'Lead Time Competitiveness': Number(dbSupplier.lead_time_competitiveness || 0),
-    'Emergency Response Capability': Number(dbSupplier.emergency_response_capability || 0),
-    'Communication Effectiveness': Number(dbSupplier.communication_effectiveness || 0),
-    'Contract Compliance History': Number(dbSupplier.contract_compliance_history || 0),
-    'Business Stability & Longevity': Number(dbSupplier.business_stability_longevity || 0),
-    'Environmental Certifications': Number(dbSupplier.environmental_certifications || 0),
-    'Social Responsibility Programs': Number(dbSupplier.social_responsibility_programs || 0),
-    'Sustainable Sourcing Practices': Number(dbSupplier.sustainable_sourcing_practices || 0)
-  };
-
-  // Return the supplier object with explicit property assignment
-  return {
-    id,
-    name,
-    description,
-    contactPerson,
-    email,
-    phone,
-    address,
-    industry,
-    establishedYear,
-    certifications,
-    status,
-    website,
-    overallScore,
-    createdAt,
-    updatedAt,
-    scores
-  };
+  result.id = String(dbSupplier.id || '');
+  result.name = String(dbSupplier.name || '');
+  result.description = String(dbSupplier.description || '');
+  result.contactPerson = String(dbSupplier.contact_person || '');
+  result.email = String(dbSupplier.email || '');
+  result.phone = String(dbSupplier.phone || '');
+  result.address = String(dbSupplier.address || '');
+  result.industry = String(dbSupplier.industry || '');
+  result.establishedYear = Number(dbSupplier.established_year || 0);
+  result.certifications = Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [];
+  result.status = (dbSupplier.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected';
+  result.website = String(dbSupplier.website || '');
+  result.overallScore = Number(dbSupplier.overall_score || 0);
+  result.createdAt = new Date(dbSupplier.created_at || Date.now());
+  result.updatedAt = new Date(dbSupplier.updated_at || Date.now());
+  
+  const scoreMap = {} as Record<string, number>;
+  scoreMap['Product Specifications Adherence'] = Number(dbSupplier.product_specifications_adherence || 0);
+  scoreMap['Defect Rate & Quality Control'] = Number(dbSupplier.defect_rate_quality_control || 0);
+  scoreMap['Quality Certifications'] = Number(dbSupplier.quality_certification_score || 0);
+  scoreMap['Unit Pricing Competitiveness'] = Number(dbSupplier.unit_pricing_competitiveness || 0);
+  scoreMap['Payment Terms Flexibility'] = Number(dbSupplier.payment_terms_flexibility || 0);
+  scoreMap['Total Cost of Ownership'] = Number(dbSupplier.total_cost_ownership || 0);
+  scoreMap['On-time Delivery Performance'] = Number(dbSupplier.ontime_delivery_performance || 0);
+  scoreMap['Lead Time Competitiveness'] = Number(dbSupplier.lead_time_competitiveness || 0);
+  scoreMap['Emergency Response Capability'] = Number(dbSupplier.emergency_response_capability || 0);
+  scoreMap['Communication Effectiveness'] = Number(dbSupplier.communication_effectiveness || 0);
+  scoreMap['Contract Compliance History'] = Number(dbSupplier.contract_compliance_history || 0);
+  scoreMap['Business Stability & Longevity'] = Number(dbSupplier.business_stability_longevity || 0);
+  scoreMap['Environmental Certifications'] = Number(dbSupplier.environmental_certifications || 0);
+  scoreMap['Social Responsibility Programs'] = Number(dbSupplier.social_responsibility_programs || 0);
+  scoreMap['Sustainable Sourcing Practices'] = Number(dbSupplier.sustainable_sourcing_practices || 0);
+  
+  result.scores = scoreMap;
+  
+  return result;
 };
 
 export const supplierService = {

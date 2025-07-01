@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -124,16 +123,17 @@ export const EvaluationMatrix = () => {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-green-600";
-    if (score >= 80) return "text-blue-600";
-    if (score >= 70) return "text-yellow-600";
-    if (score >= 60) return "text-orange-600";
+    if (score >= 9) return "text-green-600";
+    if (score >= 8) return "text-blue-600";
+    if (score >= 7) return "text-yellow-600";
+    if (score >= 6) return "text-orange-600";
     return "text-red-600";
   };
 
   const getScoreBadge = (score: number) => {
+    const displayScore = score * 10; // Convert 0-10 scale to 0-100 scale for badge logic
     const scaleEntry = Object.entries(SCORING_SCALE).find(([_, scale]) => 
-      score >= scale.min && score <= scale.max
+      displayScore >= scale.min && displayScore <= scale.max
     );
     
     if (!scaleEntry) return null;
@@ -155,8 +155,8 @@ export const EvaluationMatrix = () => {
   };
 
   const getPerformanceIcon = (score: number) => {
-    if (score >= 85) return <TrendingUp className="w-4 h-4 text-green-600" />;
-    if (score >= 70) return <Minus className="w-4 h-4 text-yellow-600" />;
+    if (score >= 8.5) return <TrendingUp className="w-4 h-4 text-green-600" />;
+    if (score >= 7) return <Minus className="w-4 h-4 text-yellow-600" />;
     return <TrendingDown className="w-4 h-4 text-red-600" />;
   };
 
@@ -200,7 +200,7 @@ export const EvaluationMatrix = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <CardTitle className="text-xl font-bold gradient-text">Advanced Supplier Comparison Matrix</CardTitle>
-            <p className="text-gray-600 mt-1">Comprehensive performance analysis with advanced filtering and sorting</p>
+            <p className="text-gray-600 mt-1">Comprehensive performance analysis with detailed criteria scoring</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -308,7 +308,7 @@ export const EvaluationMatrix = () => {
 
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <div className="min-w-[1200px]">
+          <div className="min-w-[2000px]">
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-200/50">
@@ -366,7 +366,7 @@ export const EvaluationMatrix = () => {
                       <div className="space-y-1 min-w-0">
                         <div className="font-semibold text-blue-900 flex items-center gap-2">
                           <span className="truncate">{supplier.name}</span>
-                          {getPerformanceIcon(supplier.totalScore)}
+                          {getPerformanceIcon(supplier.totalScore / 10)}
                         </div>
                         <div className="text-sm text-gray-500 truncate">{supplier.industry}</div>
                         <div className="text-xs text-gray-400">Est. {supplier.establishedYear}</div>
@@ -374,24 +374,25 @@ export const EvaluationMatrix = () => {
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="space-y-2">
-                        <div className={`text-xl font-bold ${getScoreColor(supplier.totalScore)}`}>
+                        <div className={`text-xl font-bold ${getScoreColor(supplier.totalScore / 10)}`}>
                           {supplier.totalScore.toFixed(1)}
                         </div>
                         <Progress value={supplier.totalScore} className="w-20 mx-auto" />
-                        {getScoreBadge(supplier.totalScore)}
+                        {getScoreBadge(supplier.totalScore / 10)}
                       </div>
                     </TableCell>
                     {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => {
                       const scoreValue = supplier.scores?.[criteria.name] || 0;
-                      // Convert to 0-100 scale for display
-                      const displayScore = scoreValue * 10;
                       return (
                         <TableCell key={criteria.id} className="text-center">
                           <div className="space-y-1">
-                            <div className={`text-lg font-semibold ${getScoreColor(displayScore)}`}>
-                              {displayScore.toFixed(1)}
+                            <div className={`text-lg font-semibold ${getScoreColor(scoreValue)}`}>
+                              {scoreValue.toFixed(1)}
                             </div>
-                            <Progress value={displayScore} className="w-16 mx-auto" />
+                            <Progress value={scoreValue * 10} className="w-16 mx-auto" />
+                            <div className="text-xs text-gray-500">
+                              {scoreValue > 0 ? `${(scoreValue * 10).toFixed(0)}%` : 'N/A'}
+                            </div>
                           </div>
                         </TableCell>
                       );
