@@ -42,7 +42,58 @@ export interface SupplierInsert {
   sustainable_sourcing_practices?: number;
 }
 
-const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
+interface DatabaseSupplier {
+  id: string;
+  name: string;
+  description: string | null;
+  contact_person: string;
+  email: string;
+  phone: string;
+  address: string | null;
+  industry: string;
+  established_year: number | null;
+  certifications: string[] | null;
+  status: string;
+  website: string | null;
+  overall_score: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  product_specifications_adherence: number | null;
+  defect_rate_quality_control: number | null;
+  quality_certification_score: number | null;
+  unit_pricing_competitiveness: number | null;
+  payment_terms_flexibility: number | null;
+  total_cost_ownership: number | null;
+  ontime_delivery_performance: number | null;
+  lead_time_competitiveness: number | null;
+  emergency_response_capability: number | null;
+  communication_effectiveness: number | null;
+  contract_compliance_history: number | null;
+  business_stability_longevity: number | null;
+  environmental_certifications: number | null;
+  social_responsibility_programs: number | null;
+  sustainable_sourcing_practices: number | null;
+}
+
+const mapSupplierFromDatabase = (dbSupplier: DatabaseSupplier): Supplier => {
+  const scores: Record<string, number> = {
+    'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
+    'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
+    'Quality Certifications': dbSupplier.quality_certification_score || 0,
+    'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
+    'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
+    'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,
+    'On-time Delivery Performance': dbSupplier.ontime_delivery_performance || 0,
+    'Lead Time Competitiveness': dbSupplier.lead_time_competitiveness || 0,
+    'Emergency Response Capability': dbSupplier.emergency_response_capability || 0,
+    'Communication Effectiveness': dbSupplier.communication_effectiveness || 0,
+    'Contract Compliance History': dbSupplier.contract_compliance_history || 0,
+    'Business Stability & Longevity': dbSupplier.business_stability_longevity || 0,
+    'Environmental Certifications': dbSupplier.environmental_certifications || 0,
+    'Social Responsibility Programs': dbSupplier.social_responsibility_programs || 0,
+    'Sustainable Sourcing Practices': dbSupplier.sustainable_sourcing_practices || 0
+  };
+
   return {
     id: dbSupplier.id || '',
     name: dbSupplier.name || '',
@@ -59,23 +110,7 @@ const mapSupplierFromDatabase = (dbSupplier: any): Supplier => {
     overallScore: dbSupplier.overall_score || 0,
     createdAt: new Date(dbSupplier.created_at || Date.now()),
     updatedAt: new Date(dbSupplier.updated_at || Date.now()),
-    scores: {
-      'Product Specifications Adherence': dbSupplier.product_specifications_adherence || 0,
-      'Defect Rate & Quality Control': dbSupplier.defect_rate_quality_control || 0,
-      'Quality Certifications': dbSupplier.quality_certification_score || 0,
-      'Unit Pricing Competitiveness': dbSupplier.unit_pricing_competitiveness || 0,
-      'Payment Terms Flexibility': dbSupplier.payment_terms_flexibility || 0,
-      'Total Cost of Ownership': dbSupplier.total_cost_ownership || 0,
-      'On-time Delivery Performance': dbSupplier.ontime_delivery_performance || 0,
-      'Lead Time Competitiveness': dbSupplier.lead_time_competitiveness || 0,
-      'Emergency Response Capability': dbSupplier.emergency_response_capability || 0,
-      'Communication Effectiveness': dbSupplier.communication_effectiveness || 0,
-      'Contract Compliance History': dbSupplier.contract_compliance_history || 0,
-      'Business Stability & Longevity': dbSupplier.business_stability_longevity || 0,
-      'Environmental Certifications': dbSupplier.environmental_certifications || 0,
-      'Social Responsibility Programs': dbSupplier.social_responsibility_programs || 0,
-      'Sustainable Sourcing Practices': dbSupplier.sustainable_sourcing_practices || 0
-    }
+    scores: scores
   };
 };
 
@@ -100,7 +135,7 @@ export const supplierService = {
 
     console.log('Raw supplier data from database:', data);
     
-    const mappedSuppliers = data?.map(mapSupplierFromDatabase) || [];
+    const mappedSuppliers = data?.map((item) => mapSupplierFromDatabase(item as DatabaseSupplier)) || [];
     
     console.log('Mapped suppliers:', mappedSuppliers);
     console.log('Active suppliers count:', mappedSuppliers.filter(s => s.status === 'active').length);
@@ -135,7 +170,7 @@ export const supplierService = {
       throw error;
     }
 
-    return mapSupplierFromDatabase(data);
+    return mapSupplierFromDatabase(data as DatabaseSupplier);
   },
 
   async updateSupplier(id: string, supplierData: Partial<SupplierInsert>): Promise<Supplier> {
@@ -161,7 +196,7 @@ export const supplierService = {
       throw error;
     }
 
-    return mapSupplierFromDatabase(data);
+    return mapSupplierFromDatabase(data as DatabaseSupplier);
   },
 
   async deleteSupplier(id: string): Promise<void> {
@@ -202,6 +237,6 @@ export const supplierService = {
       throw error;
     }
 
-    return data?.map(mapSupplierFromDatabase) || [];
+    return data?.map((item) => mapSupplierFromDatabase(item as DatabaseSupplier)) || [];
   }
 };

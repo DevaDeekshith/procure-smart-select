@@ -4,6 +4,39 @@ import { toast } from "@/hooks/use-toast";
 
 const ELEVENLABS_API_KEY = "sk_86e3b671a655957a5c76825e01f1a161ceb461eb60ab3efc";
 
+interface SupplierData {
+  id: string;
+  name: string;
+  industry: string;
+  status: string;
+  overall_score: number | null;
+  contact_person: string;
+  email: string;
+  phone: string;
+  address: string | null;
+  website: string | null;
+  established_year: number | null;
+  description: string | null;
+  certifications: string[] | null;
+  product_specifications_adherence: number | null;
+  defect_rate_quality_control: number | null;
+  quality_certification_score: number | null;
+  unit_pricing_competitiveness: number | null;
+  payment_terms_flexibility: number | null;
+  total_cost_ownership: number | null;
+  ontime_delivery_performance: number | null;
+  lead_time_competitiveness: number | null;
+  emergency_response_capability: number | null;
+  communication_effectiveness: number | null;
+  contract_compliance_history: number | null;
+  business_stability_longevity: number | null;
+  environmental_certifications: number | null;
+  social_responsibility_programs: number | null;
+  sustainable_sourcing_practices: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export const elevenLabsKnowledgeService = {
   async syncKnowledgeBase(): Promise<boolean> {
     try {
@@ -22,8 +55,11 @@ export const elevenLabsKnowledgeService = {
 
       console.log('Fetched suppliers for ElevenLabs sync:', suppliers?.length || 0);
 
+      // Type the suppliers array properly
+      const typedSuppliers = (suppliers || []) as SupplierData[];
+
       // Format supplier data for knowledge base
-      const knowledgeText = this.formatSuppliersForKnowledgeBase(suppliers || []);
+      const knowledgeText = this.formatSuppliersForKnowledgeBase(typedSuppliers);
       
       // Send directly to ElevenLabs API
       const response = await fetch('https://api.elevenlabs.io/v1/convai/knowledge-base/text', {
@@ -50,7 +86,7 @@ export const elevenLabsKnowledgeService = {
       
       toast({
         title: "Knowledge Base Updated",
-        description: `Successfully synced ${suppliers?.length || 0} suppliers to ElevenLabs`,
+        description: `Successfully synced ${typedSuppliers.length} suppliers to ElevenLabs`,
       });
       
       return true;
@@ -65,7 +101,7 @@ export const elevenLabsKnowledgeService = {
     }
   },
 
-  formatSuppliersForKnowledgeBase(suppliers: any[]): string {
+  formatSuppliersForKnowledgeBase(suppliers: SupplierData[]): string {
     const totalSuppliers = suppliers.length;
     const activeSuppliers = suppliers.filter(s => s.status === 'active').length;
     const averageScore = suppliers.length > 0 
@@ -79,14 +115,14 @@ export const elevenLabsKnowledgeService = {
       .slice(0, Math.ceil(suppliers.length * 0.1));
 
     // Group by industry
-    const industriesMap = suppliers.reduce((acc, supplier) => {
+    const industriesMap = suppliers.reduce((acc: Record<string, SupplierData[]>, supplier) => {
       const industry = supplier.industry || 'Unknown';
       if (!acc[industry]) {
         acc[industry] = [];
       }
       acc[industry].push(supplier);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {});
 
     return `# CHANAKYA Supplier Management System - Complete Knowledge Base
 
@@ -162,10 +198,10 @@ Updated: ${supplier.updated_at}
 `).join('')}
 
 ## INDUSTRIES BREAKDOWN
-${Object.entries(industriesMap).map(([industry, suppliers]) => `
-### ${industry} Industry (${suppliers.length} suppliers)
-Average Score: ${(suppliers.reduce((sum, s) => sum + (s.overall_score || 0), 0) / suppliers.length).toFixed(1)}%
-Suppliers: ${suppliers.map(s => `${s.name} (${s.overall_score?.toFixed(1) || 0}%)`).join(', ')}
+${Object.entries(industriesMap).map(([industry, supplierList]) => `
+### ${industry} Industry (${supplierList.length} suppliers)
+Average Score: ${(supplierList.reduce((sum, s) => sum + (s.overall_score || 0), 0) / supplierList.length).toFixed(1)}%
+Suppliers: ${supplierList.map(s => `${s.name} (${s.overall_score?.toFixed(1) || 0}%)`).join(', ')}
 `).join('')}
 
 ## EVALUATION CRITERIA DEFINITIONS
