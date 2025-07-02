@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +57,20 @@ export const EvaluationMatrix = () => {
       });
     }
   }, [error]);
+
+  // Debug logging for scores
+  useEffect(() => {
+    if (suppliers.length > 0) {
+      console.log('EvaluationMatrix: Suppliers loaded with scores:');
+      suppliers.forEach(supplier => {
+        console.log(`${supplier.name}:`, {
+          overallScore: supplier.overallScore,
+          scores: supplier.scores,
+          rawScoreValues: Object.entries(supplier.scores || {}).map(([key, value]) => `${key}: ${value}`)
+        });
+      });
+    }
+  }, [suppliers]);
 
   const suppliersWithScores = useMemo(() => {
     if (!suppliers.length) return [];
@@ -131,7 +146,7 @@ export const EvaluationMatrix = () => {
   };
 
   const getScoreBadge = (score: number) => {
-    const displayScore = score * 10; // Convert 0-10 scale to 0-100 scale for badge logic
+    const displayScore = score; // Score is already 0-100 scale
     const scaleEntry = Object.entries(SCORING_SCALE).find(([_, scale]) => 
       displayScore >= scale.min && displayScore <= scale.max
     );
@@ -155,8 +170,8 @@ export const EvaluationMatrix = () => {
   };
 
   const getPerformanceIcon = (score: number) => {
-    if (score >= 8.5) return <TrendingUp className="w-4 h-4 text-green-600" />;
-    if (score >= 7) return <Minus className="w-4 h-4 text-yellow-600" />;
+    if (score >= 85) return <TrendingUp className="w-4 h-4 text-green-600" />;
+    if (score >= 70) return <Minus className="w-4 h-4 text-yellow-600" />;
     return <TrendingDown className="w-4 h-4 text-red-600" />;
   };
 
@@ -366,7 +381,7 @@ export const EvaluationMatrix = () => {
                       <div className="space-y-1 min-w-0">
                         <div className="font-semibold text-blue-900 flex items-center gap-2">
                           <span className="truncate">{supplier.name}</span>
-                          {getPerformanceIcon(supplier.totalScore / 10)}
+                          {getPerformanceIcon(supplier.totalScore)}
                         </div>
                         <div className="text-sm text-gray-500 truncate">{supplier.industry}</div>
                         <div className="text-xs text-gray-400">Est. {supplier.establishedYear}</div>
@@ -378,20 +393,21 @@ export const EvaluationMatrix = () => {
                           {supplier.totalScore.toFixed(1)}
                         </div>
                         <Progress value={supplier.totalScore} className="w-20 mx-auto" />
-                        {getScoreBadge(supplier.totalScore / 10)}
+                        {getScoreBadge(supplier.totalScore)}
                       </div>
                     </TableCell>
                     {DEFAULT_CRITERIA.filter(criteria => visibleCriteria.includes(criteria.id)).map(criteria => {
                       const scoreValue = supplier.scores?.[criteria.name] || 0;
+                      console.log(`Rendering score for ${supplier.name} - ${criteria.name}: ${scoreValue}`);
                       return (
                         <TableCell key={criteria.id} className="text-center">
                           <div className="space-y-1">
-                            <div className={`text-lg font-semibold ${getScoreColor(scoreValue)}`}>
+                            <div className={`text-lg font-semibold ${getScoreColor(scoreValue / 10)}`}>
                               {scoreValue.toFixed(1)}
                             </div>
-                            <Progress value={scoreValue * 10} className="w-16 mx-auto" />
+                            <Progress value={scoreValue} className="w-16 mx-auto" />
                             <div className="text-xs text-gray-500">
-                              {scoreValue > 0 ? `${(scoreValue * 10).toFixed(0)}%` : 'N/A'}
+                              {scoreValue > 0 ? `${scoreValue.toFixed(0)}%` : 'N/A'}
                             </div>
                           </div>
                         </TableCell>

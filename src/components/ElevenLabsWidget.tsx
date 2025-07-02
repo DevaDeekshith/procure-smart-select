@@ -18,8 +18,19 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
       document.head.appendChild(script);
     }
 
-    // Sync knowledge base on component mount
-    elevenLabsKnowledgeService.syncKnowledgeBase();
+    // Sync knowledge base immediately when component mounts
+    const syncKnowledgeBase = async () => {
+      console.log('Auto-syncing ElevenLabs knowledge base...');
+      try {
+        await elevenLabsKnowledgeService.syncKnowledgeBase();
+        console.log('ElevenLabs knowledge base sync completed successfully');
+      } catch (error) {
+        console.error('Failed to sync ElevenLabs knowledge base:', error);
+      }
+    };
+
+    // Run sync after a short delay to ensure the component is mounted
+    const timer = setTimeout(syncKnowledgeBase, 1000);
 
     // Set up message listener for Eleven Labs widget
     const handleMessage = (event: MessageEvent) => {
@@ -33,11 +44,7 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
         const widget = document.querySelector('elevenlabs-convai');
         
         if (widget) {
-          // Send context to the widget (this would be the actual implementation)
           console.log('Sending context to Eleven Labs widget:', context);
-          
-          // In a real implementation, you'd send this context to the Eleven Labs API
-          // through their appropriate channels or configuration
         }
       }
     };
@@ -45,6 +52,7 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
     window.addEventListener('message', handleMessage);
     
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('message', handleMessage);
     };
   }, []);
@@ -55,8 +63,6 @@ export const ElevenLabsWidget = ({ agentId = "agent_01jvpkaxcpes7s810qxj9vmphx" 
     if (context) {
       console.log('Website context updated for Eleven Labs:', context);
       
-      // Here you would send the context to the Eleven Labs agent
-      // This could be done through their API or widget configuration
       const widget = document.querySelector('elevenlabs-convai') as any;
       if (widget && widget.updateContext) {
         widget.updateContext(websiteContextService.generateContextString());
