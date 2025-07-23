@@ -1,6 +1,4 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Supplier } from "@/types/supplier";
 import { toast } from "@/hooks/use-toast";
 
 export interface SupplierInsert {
@@ -42,83 +40,8 @@ export interface SupplierInsert {
   sustainable_sourcing_practices?: number;
 }
 
-// Simplified database row type to avoid infinite recursion
-type DatabaseRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  contact_person: string;
-  email: string;
-  phone: string;
-  address: string | null;
-  industry: string;
-  established_year: number | null;
-  certifications: string[] | null;
-  status: string;
-  website: string | null;
-  overall_score: number | null;
-  created_at: string | null;
-  updated_at: string | null;
-  product_specifications_adherence: number | null;
-  defect_rate_quality_control: number | null;
-  quality_certification_score: number | null;
-  unit_pricing_competitiveness: number | null;
-  payment_terms_flexibility: number | null;
-  total_cost_ownership: number | null;
-  ontime_delivery_performance: number | null;
-  lead_time_competitiveness: number | null;
-  emergency_response_capability: number | null;
-  communication_effectiveness: number | null;
-  contract_compliance_history: number | null;
-  business_stability_longevity: number | null;
-  environmental_certifications: number | null;
-  social_responsibility_programs: number | null;
-  sustainable_sourcing_practices: number | null;
-};
-
-const mapSupplierFromDatabase = (dbSupplier: DatabaseRow): Supplier => {
-  // Create scores object with explicit typing to avoid recursion
-  const supplierScores: Record<string, number> = {};
-  
-  // Manually assign each score to avoid complex type inference
-  supplierScores['Product Specifications Adherence'] = dbSupplier.product_specifications_adherence ?? 0;
-  supplierScores['Defect Rate & Quality Control'] = dbSupplier.defect_rate_quality_control ?? 0;
-  supplierScores['Quality Certifications'] = dbSupplier.quality_certification_score ?? 0;
-  supplierScores['Unit Pricing Competitiveness'] = dbSupplier.unit_pricing_competitiveness ?? 0;
-  supplierScores['Payment Terms Flexibility'] = dbSupplier.payment_terms_flexibility ?? 0;
-  supplierScores['Total Cost of Ownership'] = dbSupplier.total_cost_ownership ?? 0;
-  supplierScores['On-time Delivery Performance'] = dbSupplier.ontime_delivery_performance ?? 0;
-  supplierScores['Lead Time Competitiveness'] = dbSupplier.lead_time_competitiveness ?? 0;
-  supplierScores['Emergency Response Capability'] = dbSupplier.emergency_response_capability ?? 0;
-  supplierScores['Communication Effectiveness'] = dbSupplier.communication_effectiveness ?? 0;
-  supplierScores['Contract Compliance History'] = dbSupplier.contract_compliance_history ?? 0;
-  supplierScores['Business Stability & Longevity'] = dbSupplier.business_stability_longevity ?? 0;
-  supplierScores['Environmental Certifications'] = dbSupplier.environmental_certifications ?? 0;
-  supplierScores['Social Responsibility Programs'] = dbSupplier.social_responsibility_programs ?? 0;
-  supplierScores['Sustainable Sourcing Practices'] = dbSupplier.sustainable_sourcing_practices ?? 0;
-
-  return {
-    id: dbSupplier.id || '',
-    name: dbSupplier.name || '',
-    description: dbSupplier.description || '',
-    contactPerson: dbSupplier.contact_person || '',
-    email: dbSupplier.email || '',
-    phone: dbSupplier.phone || '',
-    address: dbSupplier.address || '',
-    industry: dbSupplier.industry || '',
-    establishedYear: dbSupplier.established_year || 0,
-    certifications: Array.isArray(dbSupplier.certifications) ? dbSupplier.certifications : [],
-    status: (dbSupplier.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
-    website: dbSupplier.website || '',
-    overallScore: dbSupplier.overall_score || 0,
-    createdAt: new Date(dbSupplier.created_at || Date.now()),
-    updatedAt: new Date(dbSupplier.updated_at || Date.now()),
-    scores: supplierScores
-  };
-};
-
 export const supplierService = {
-  async getAllSuppliers(): Promise<Supplier[]> {
+  async getAllSuppliers() {
     console.log('Fetching suppliers from database...');
     
     const { data, error } = await supabase
@@ -138,7 +61,40 @@ export const supplierService = {
 
     console.log('Raw supplier data from database:', data);
     
-    const mappedSuppliers = data?.map((item) => mapSupplierFromDatabase(item as DatabaseRow)) || [];
+    const mappedSuppliers = data?.map((item) => ({
+      id: item.id || '',
+      name: item.name || '',
+      description: item.description || '',
+      contactPerson: item.contact_person || '',
+      email: item.email || '',
+      phone: item.phone || '',
+      address: item.address || '',
+      industry: item.industry || '',
+      establishedYear: item.established_year || 0,
+      certifications: Array.isArray(item.certifications) ? item.certifications : [],
+      status: (item.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
+      website: item.website || '',
+      overallScore: Number(item.overall_score) || 0,
+      createdAt: new Date(item.created_at || Date.now()),
+      updatedAt: new Date(item.updated_at || Date.now()),
+      scores: {
+        'Product Specifications Adherence': Number(item.product_specifications_adherence) || 0,
+        'Defect Rate & Quality Control': Number(item.defect_rate_quality_control) || 0,
+        'Quality Certifications': Number(item.quality_certification_score) || 0,
+        'Unit Pricing Competitiveness': Number(item.unit_pricing_competitiveness) || 0,
+        'Payment Terms Flexibility': Number(item.payment_terms_flexibility) || 0,
+        'Total Cost of Ownership': Number(item.total_cost_ownership) || 0,
+        'On-time Delivery Performance': Number(item.ontime_delivery_performance) || 0,
+        'Lead Time Competitiveness': Number(item.lead_time_competitiveness) || 0,
+        'Emergency Response Capability': Number(item.emergency_response_capability) || 0,
+        'Communication Effectiveness': Number(item.communication_effectiveness) || 0,
+        'Contract Compliance History': Number(item.contract_compliance_history) || 0,
+        'Business Stability & Longevity': Number(item.business_stability_longevity) || 0,
+        'Environmental Certifications': Number(item.environmental_certifications) || 0,
+        'Social Responsibility Programs': Number(item.social_responsibility_programs) || 0,
+        'Sustainable Sourcing Practices': Number(item.sustainable_sourcing_practices) || 0
+      }
+    })) || [];
     
     console.log('Mapped suppliers:', mappedSuppliers);
     console.log('Active suppliers count:', mappedSuppliers.filter(s => s.status === 'active').length);
@@ -151,7 +107,7 @@ export const supplierService = {
     return mappedSuppliers;
   },
 
-  async createSupplier(supplierData: SupplierInsert): Promise<Supplier> {
+  async createSupplier(supplierData: SupplierInsert) {
     const normalizedData = {
       ...supplierData,
       status: (supplierData.status?.toLowerCase() || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected'
@@ -173,10 +129,43 @@ export const supplierService = {
       throw error;
     }
 
-    return mapSupplierFromDatabase(data as DatabaseRow);
+    return {
+      id: data.id || '',
+      name: data.name || '',
+      description: data.description || '',
+      contactPerson: data.contact_person || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      address: data.address || '',
+      industry: data.industry || '',
+      establishedYear: data.established_year || 0,
+      certifications: Array.isArray(data.certifications) ? data.certifications : [],
+      status: (data.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
+      website: data.website || '',
+      overallScore: Number(data.overall_score) || 0,
+      createdAt: new Date(data.created_at || Date.now()),
+      updatedAt: new Date(data.updated_at || Date.now()),
+      scores: {
+        'Product Specifications Adherence': Number(data.product_specifications_adherence) || 0,
+        'Defect Rate & Quality Control': Number(data.defect_rate_quality_control) || 0,
+        'Quality Certifications': Number(data.quality_certification_score) || 0,
+        'Unit Pricing Competitiveness': Number(data.unit_pricing_competitiveness) || 0,
+        'Payment Terms Flexibility': Number(data.payment_terms_flexibility) || 0,
+        'Total Cost of Ownership': Number(data.total_cost_ownership) || 0,
+        'On-time Delivery Performance': Number(data.ontime_delivery_performance) || 0,
+        'Lead Time Competitiveness': Number(data.lead_time_competitiveness) || 0,
+        'Emergency Response Capability': Number(data.emergency_response_capability) || 0,
+        'Communication Effectiveness': Number(data.communication_effectiveness) || 0,
+        'Contract Compliance History': Number(data.contract_compliance_history) || 0,
+        'Business Stability & Longevity': Number(data.business_stability_longevity) || 0,
+        'Environmental Certifications': Number(data.environmental_certifications) || 0,
+        'Social Responsibility Programs': Number(data.social_responsibility_programs) || 0,
+        'Sustainable Sourcing Practices': Number(data.sustainable_sourcing_practices) || 0
+      }
+    };
   },
 
-  async updateSupplier(id: string, supplierData: Partial<SupplierInsert>): Promise<Supplier> {
+  async updateSupplier(id: string, supplierData: Partial<SupplierInsert>) {
     const normalizedData = {
       ...supplierData,
       status: supplierData.status ? (supplierData.status.toLowerCase() as 'active' | 'inactive' | 'pending' | 'rejected') : undefined
@@ -199,7 +188,40 @@ export const supplierService = {
       throw error;
     }
 
-    return mapSupplierFromDatabase(data as DatabaseRow);
+    return {
+      id: data.id || '',
+      name: data.name || '',
+      description: data.description || '',
+      contactPerson: data.contact_person || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      address: data.address || '',
+      industry: data.industry || '',
+      establishedYear: data.established_year || 0,
+      certifications: Array.isArray(data.certifications) ? data.certifications : [],
+      status: (data.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
+      website: data.website || '',
+      overallScore: Number(data.overall_score) || 0,
+      createdAt: new Date(data.created_at || Date.now()),
+      updatedAt: new Date(data.updated_at || Date.now()),
+      scores: {
+        'Product Specifications Adherence': Number(data.product_specifications_adherence) || 0,
+        'Defect Rate & Quality Control': Number(data.defect_rate_quality_control) || 0,
+        'Quality Certifications': Number(data.quality_certification_score) || 0,
+        'Unit Pricing Competitiveness': Number(data.unit_pricing_competitiveness) || 0,
+        'Payment Terms Flexibility': Number(data.payment_terms_flexibility) || 0,
+        'Total Cost of Ownership': Number(data.total_cost_ownership) || 0,
+        'On-time Delivery Performance': Number(data.ontime_delivery_performance) || 0,
+        'Lead Time Competitiveness': Number(data.lead_time_competitiveness) || 0,
+        'Emergency Response Capability': Number(data.emergency_response_capability) || 0,
+        'Communication Effectiveness': Number(data.communication_effectiveness) || 0,
+        'Contract Compliance History': Number(data.contract_compliance_history) || 0,
+        'Business Stability & Longevity': Number(data.business_stability_longevity) || 0,
+        'Environmental Certifications': Number(data.environmental_certifications) || 0,
+        'Social Responsibility Programs': Number(data.social_responsibility_programs) || 0,
+        'Sustainable Sourcing Practices': Number(data.sustainable_sourcing_practices) || 0
+      }
+    };
   },
 
   async deleteSupplier(id: string): Promise<void> {
@@ -219,7 +241,7 @@ export const supplierService = {
     }
   },
 
-  async bulkCreateSuppliers(suppliersData: SupplierInsert[]): Promise<Supplier[]> {
+  async bulkCreateSuppliers(suppliersData: SupplierInsert[]) {
     const normalizedData = suppliersData.map(supplier => ({
       ...supplier,
       status: (supplier.status?.toLowerCase() || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected'
@@ -240,6 +262,39 @@ export const supplierService = {
       throw error;
     }
 
-    return data?.map((item) => mapSupplierFromDatabase(item as DatabaseRow)) || [];
+    return data?.map((item) => ({
+      id: item.id || '',
+      name: item.name || '',
+      description: item.description || '',
+      contactPerson: item.contact_person || '',
+      email: item.email || '',
+      phone: item.phone || '',
+      address: item.address || '',
+      industry: item.industry || '',
+      establishedYear: item.established_year || 0,
+      certifications: Array.isArray(item.certifications) ? item.certifications : [],
+      status: (item.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
+      website: item.website || '',
+      overallScore: Number(item.overall_score) || 0,
+      createdAt: new Date(item.created_at || Date.now()),
+      updatedAt: new Date(item.updated_at || Date.now()),
+      scores: {
+        'Product Specifications Adherence': Number(item.product_specifications_adherence) || 0,
+        'Defect Rate & Quality Control': Number(item.defect_rate_quality_control) || 0,
+        'Quality Certifications': Number(item.quality_certification_score) || 0,
+        'Unit Pricing Competitiveness': Number(item.unit_pricing_competitiveness) || 0,
+        'Payment Terms Flexibility': Number(item.payment_terms_flexibility) || 0,
+        'Total Cost of Ownership': Number(item.total_cost_ownership) || 0,
+        'On-time Delivery Performance': Number(item.ontime_delivery_performance) || 0,
+        'Lead Time Competitiveness': Number(item.lead_time_competitiveness) || 0,
+        'Emergency Response Capability': Number(item.emergency_response_capability) || 0,
+        'Communication Effectiveness': Number(item.communication_effectiveness) || 0,
+        'Contract Compliance History': Number(item.contract_compliance_history) || 0,
+        'Business Stability & Longevity': Number(item.business_stability_longevity) || 0,
+        'Environmental Certifications': Number(item.environmental_certifications) || 0,
+        'Social Responsibility Programs': Number(item.social_responsibility_programs) || 0,
+        'Sustainable Sourcing Practices': Number(item.sustainable_sourcing_practices) || 0
+      }
+    })) || [];
   }
 };

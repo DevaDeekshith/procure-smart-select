@@ -11,11 +11,11 @@ export interface Supplier {
   establishedYear: number;
   certifications: string[];
   status: 'active' | 'inactive' | 'pending' | 'rejected';
-  overallScore?: number;
-  scores?: Record<string, number>; // Add scores property
-  website?: string; // Add website property
-  contactEmail?: string; // Add contactEmail as alias
-  contactPhone?: string; // Add contactPhone as alias
+  overallScore: number;
+  scores: { [key: string]: number };
+  website: string;
+  contactEmail?: string;
+  contactPhone?: string;
   createdAt: Date;
   updatedAt: Date;
 }
