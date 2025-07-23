@@ -40,40 +40,81 @@ export interface SupplierInsert {
   sustainable_sourcing_practices?: number;
 }
 
-const mapSupplierFromDB = (item: any): Supplier => ({
-  id: item.id || '',
-  name: item.name || '',
-  description: item.description || '',
-  contactPerson: item.contact_person || '',
-  email: item.email || '',
-  phone: item.phone || '',
-  address: item.address || '',
-  industry: item.industry || '',
-  establishedYear: 0, // Not in DB
-  certifications: Array.isArray(item.certifications) ? item.certifications : [],
-  status: (item.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
-  website: item.website || '',
-  overallScore: Number(item.overall_score) || 0,
-  createdAt: new Date(item.created_at || Date.now()),
-  updatedAt: new Date(item.updated_at || Date.now()),
-  scores: {
-    'Product Specifications Adherence': Number(item.product_specifications_adherence) || 0,
-    'Defect Rate & Quality Control': Number(item.defect_rate_quality_control) || 0,
-    'Quality Certifications': Number(item.quality_certification_score) || 0,
-    'Unit Pricing Competitiveness': Number(item.unit_pricing_competitiveness) || 0,
-    'Payment Terms Flexibility': Number(item.payment_terms_flexibility) || 0,
-    'Total Cost of Ownership': Number(item.total_cost_ownership) || 0,
-    'On-time Delivery Performance': Number(item.ontime_delivery_performance) || 0,
-    'Lead Time Competitiveness': Number(item.lead_time_competitiveness) || 0,
-    'Emergency Response Capability': Number(item.emergency_response_capability) || 0,
-    'Communication Effectiveness': Number(item.communication_effectiveness) || 0,
-    'Contract Compliance History': Number(item.contract_compliance_history) || 0,
-    'Business Stability & Longevity': Number(item.business_stability_longevity) || 0,
-    'Environmental Certifications': Number(item.environmental_certifications) || 0,
-    'Social Responsibility Programs': Number(item.social_responsibility_programs) || 0,
-    'Sustainable Sourcing Practices': Number(item.sustainable_sourcing_practices) || 0
-  }
-});
+const mapSupplierFromDB = (item: any): Supplier => {
+  // Calculate main criteria scores by averaging their sub-criteria
+  const productQualityScore = (
+    (Number(item.product_specifications_adherence) || 0) +
+    (Number(item.defect_rate_quality_control) || 0) +
+    (Number(item.quality_certification_score) || 0)
+  ) / 3;
+
+  const costCompetitivenessScore = (
+    (Number(item.unit_pricing_competitiveness) || 0) +
+    (Number(item.payment_terms_flexibility) || 0) +
+    (Number(item.total_cost_ownership) || 0)
+  ) / 3;
+
+  const leadTimePerformanceScore = (
+    (Number(item.ontime_delivery_performance) || 0) +
+    (Number(item.lead_time_competitiveness) || 0) +
+    (Number(item.emergency_response_capability) || 0)
+  ) / 3;
+
+  const reliabilityTrustScore = (
+    (Number(item.communication_effectiveness) || 0) +
+    (Number(item.contract_compliance_history) || 0) +
+    (Number(item.business_stability_longevity) || 0)
+  ) / 3;
+
+  const sustainabilityScore = (
+    (Number(item.environmental_certifications) || 0) +
+    (Number(item.social_responsibility_programs) || 0) +
+    (Number(item.sustainable_sourcing_practices) || 0)
+  ) / 3;
+
+  return {
+    id: item.id || '',
+    name: item.name || '',
+    description: item.description || '',
+    contactPerson: item.contact_person || '',
+    email: item.email || '',
+    phone: item.phone || '',
+    address: item.address || '',
+    industry: item.industry || '',
+    establishedYear: 0, // Not in DB
+    certifications: Array.isArray(item.certifications) ? item.certifications : [],
+    status: (item.status || 'pending') as 'active' | 'inactive' | 'pending' | 'rejected',
+    website: item.website || '',
+    overallScore: Number(item.overall_score) || 0,
+    createdAt: new Date(item.created_at || Date.now()),
+    updatedAt: new Date(item.updated_at || Date.now()),
+    scores: {
+      // Main criteria scores
+      'Product Quality': productQualityScore,
+      'Cost Competitiveness': costCompetitivenessScore,
+      'Lead Time Performance': leadTimePerformanceScore,
+      'Reliability & Trust': reliabilityTrustScore,
+      'Sustainability Practices': sustainabilityScore,
+      
+      // Sub-criteria scores
+      'Product Specifications Adherence': Number(item.product_specifications_adherence) || 0,
+      'Defect Rate & Quality Control': Number(item.defect_rate_quality_control) || 0,
+      'Quality Certifications': Number(item.quality_certification_score) || 0,
+      'Unit Pricing Competitiveness': Number(item.unit_pricing_competitiveness) || 0,
+      'Payment Terms Flexibility': Number(item.payment_terms_flexibility) || 0,
+      'Total Cost of Ownership': Number(item.total_cost_ownership) || 0,
+      'On-time Delivery Performance': Number(item.ontime_delivery_performance) || 0,
+      'Lead Time Competitiveness': Number(item.lead_time_competitiveness) || 0,
+      'Emergency Response Capability': Number(item.emergency_response_capability) || 0,
+      'Communication Effectiveness': Number(item.communication_effectiveness) || 0,
+      'Contract Compliance History': Number(item.contract_compliance_history) || 0,
+      'Business Stability & Longevity': Number(item.business_stability_longevity) || 0,
+      'Environmental Certifications': Number(item.environmental_certifications) || 0,
+      'Social Responsibility Programs': Number(item.social_responsibility_programs) || 0,
+      'Sustainable Sourcing Practices': Number(item.sustainable_sourcing_practices) || 0
+    }
+  };
+};
 
 export const supplierService = {
   async getAllSuppliers() {
