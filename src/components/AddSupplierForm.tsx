@@ -135,7 +135,6 @@ export const AddSupplierForm = ({ onSubmit, onCancel }: AddSupplierFormProps) =>
         phone: formData.phone,
         address: formData.address,
         industry: formData.industry,
-        established_year: formData.establishedYear,
         status: formData.status,
         website: formData.website,
         certifications,

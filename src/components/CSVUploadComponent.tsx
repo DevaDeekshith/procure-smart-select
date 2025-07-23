@@ -88,7 +88,7 @@ XYZ Electronics,Jane Doe,jane@xyz.com,555-5678,Electronics,pending,Electronic co
         } else if (lowerHeader.includes('website')) {
           supplierData.website = value;
         } else if (lowerHeader.includes('establishedyear') || lowerHeader.includes('established_year')) {
-          supplierData.established_year = value ? parseInt(value) : undefined;
+          // Skip established_year as it's not in the database
         } else {
           // Map scoring fields
           const scoreField = header.toLowerCase().replace(/[^a-z]/g, '_');

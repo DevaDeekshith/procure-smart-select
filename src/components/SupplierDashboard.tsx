@@ -113,7 +113,7 @@ export const SupplierDashboard = () => {
         phone: updatedSupplier.phone,
         address: updatedSupplier.address,
         industry: updatedSupplier.industry,
-        established_year: updatedSupplier.establishedYear,
+        
         status: updatedSupplier.status,
         website: updatedSupplier.website,
         certifications: updatedSupplier.certifications,
